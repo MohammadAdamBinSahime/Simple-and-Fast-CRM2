@@ -6,6 +6,7 @@ import {
   HandshakeIcon,
   CheckSquare,
   Settings,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,6 +20,8 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 const mainNavItems = [
   {
@@ -58,6 +61,7 @@ const settingsNavItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user, logout, isLoggingOut } = useAuth();
 
   return (
     <Sidebar>
@@ -115,7 +119,23 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-4 space-y-3">
+        {user && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium truncate" data-testid="text-username">
+              {user.username}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              disabled={isLoggingOut}
+              data-testid="button-logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
         <div className="text-xs text-muted-foreground">
           Inspired by TwentyCRM
         </div>
