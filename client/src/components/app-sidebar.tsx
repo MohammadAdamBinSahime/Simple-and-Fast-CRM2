@@ -169,9 +169,6 @@ export function AppSidebar() {
             </Button>
           </div>
         )}
-        <div className="text-xs text-muted-foreground">
-          Inspired by TwentyCRM
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

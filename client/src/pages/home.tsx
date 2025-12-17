@@ -151,7 +151,7 @@ export default function Home() {
             <span className="text-sm font-medium">CRM</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Inspired by TwentyCRM. Built with modern technologies.
+Built with modern technologies.
           </p>
         </div>
       </footer>

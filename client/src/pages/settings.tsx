@@ -66,15 +66,9 @@ export default function Settings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Version</p>
-                <p className="font-medium">1.0.0</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Inspired By</p>
-                <p className="font-medium">TwentyCRM</p>
-              </div>
+            <div className="text-sm">
+              <p className="text-muted-foreground">Version</p>
+              <p className="font-medium">1.0.0</p>
             </div>
             <div className="pt-4 border-t">
               <p className="text-xs text-muted-foreground">
