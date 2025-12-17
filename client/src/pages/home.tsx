@@ -45,12 +45,6 @@ const features = [
   },
 ];
 
-const stats = [
-  { label: "Active Users", value: "1,000+" },
-  { label: "Deals Closed", value: "$5M+" },
-  { label: "Companies Managed", value: "500+" },
-  { label: "Tasks Completed", value: "10,000+" },
-];
 
 export default function Home() {
   return (
@@ -95,22 +89,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 px-4 border-t bg-muted/30">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-3xl font-bold text-primary" data-testid={`stat-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}>
-                  {stat.value}
-                </p>
-                <p className="text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 border-t">
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4" data-testid="text-features-title">
