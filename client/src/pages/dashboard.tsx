@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { MetricCard } from "@/components/metric-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Building2, HandshakeIcon, CheckSquare, DollarSign, TrendingUp } from "lucide-react";
+import { Users, Building2, HandshakeIcon, CheckSquare, DollarSign, TrendingUp, Activity, Phone, Mail, Calendar, FileText } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDistanceToNow } from "date-fns";
-import type { Contact, Company, Deal, Task } from "@shared/schema";
+import type { Contact, Company, Deal, Task, Activity as ActivityType } from "@shared/schema";
 
 interface DashboardMetrics {
   totalContacts: number;
@@ -31,6 +31,25 @@ export default function Dashboard() {
   const { data: upcomingTasks, isLoading: tasksLoading } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
   });
+
+  const { data: recentActivities, isLoading: activitiesLoading } = useQuery<ActivityType[]>({
+    queryKey: ["/api/activities"],
+  });
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "call":
+        return <Phone className="h-4 w-4" />;
+      case "email":
+        return <Mail className="h-4 w-4" />;
+      case "meeting":
+        return <Calendar className="h-4 w-4" />;
+      case "note":
+        return <FileText className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -175,7 +194,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
             <CardTitle className="text-lg font-medium">Upcoming Tasks</CardTitle>
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
@@ -224,6 +243,52 @@ export default function Dashboard() {
             ) : (
               <p className="text-muted-foreground text-sm text-center py-8">
                 No upcoming tasks. Create tasks to stay organized.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+            <CardTitle className="text-lg font-medium">Recent Activity</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {activitiesLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 w-40 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : recentActivities && recentActivities.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivities.slice(0, 8).map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-3"
+                    data-testid={`activity-${activity.id}`}
+                  >
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                      {getActivityIcon(activity.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm">{activity.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm text-center py-8">
+                No activity yet. Activities will appear as you work with your CRM.
               </p>
             )}
           </CardContent>

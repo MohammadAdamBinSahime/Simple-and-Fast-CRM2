@@ -68,6 +68,32 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Tags table
+export const tags = pgTable("tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  color: text("color").notNull().default("#6366f1"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Contact tags junction table
+export const contactTags = pgTable("contact_tags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  contactId: varchar("contact_id").references(() => contacts.id).notNull(),
+  tagId: varchar("tag_id").references(() => tags.id).notNull(),
+});
+
+// Activities table for timeline
+export const activities = pgTable("activities", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(),
+  description: text("description").notNull(),
+  contactId: varchar("contact_id").references(() => contacts.id),
+  companyId: varchar("company_id").references(() => companies.id),
+  dealId: varchar("deal_id").references(() => deals.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   contacts: many(contacts),
@@ -129,6 +155,36 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
   }),
 }));
 
+export const tagsRelations = relations(tags, ({ many }) => ({
+  contactTags: many(contactTags),
+}));
+
+export const contactTagsRelations = relations(contactTags, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [contactTags.contactId],
+    references: [contacts.id],
+  }),
+  tag: one(tags, {
+    fields: [contactTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [activities.contactId],
+    references: [contacts.id],
+  }),
+  company: one(companies, {
+    fields: [activities.companyId],
+    references: [companies.id],
+  }),
+  deal: one(deals, {
+    fields: [activities.dealId],
+    references: [deals.id],
+  }),
+}));
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -155,6 +211,20 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   createdAt: true,
 });
 
+export const insertTagSchema = createInsertSchema(tags).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertContactTagSchema = createInsertSchema(contactTags).omit({
+  id: true,
+});
+
+export const insertActivitySchema = createInsertSchema(activities).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
@@ -170,6 +240,19 @@ export type Note = typeof notes.$inferSelect;
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
+
+export type InsertTag = z.infer<typeof insertTagSchema>;
+export type Tag = typeof tags.$inferSelect;
+
+export type InsertContactTag = z.infer<typeof insertContactTagSchema>;
+export type ContactTag = typeof contactTags.$inferSelect;
+
+export type InsertActivity = z.infer<typeof insertActivitySchema>;
+export type Activity = typeof activities.$inferSelect;
+
+// Activity types
+export const activityTypes = ["call", "email", "meeting", "note", "task_completed", "deal_created", "deal_updated", "contact_created"] as const;
+export type ActivityType = typeof activityTypes[number];
 
 // Contact statuses
 export const contactStatuses = ["lead", "qualified", "customer", "inactive"] as const;

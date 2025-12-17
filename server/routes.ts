@@ -7,6 +7,8 @@ import {
   insertDealSchema,
   insertNoteSchema,
   insertTaskSchema,
+  insertTagSchema,
+  insertActivitySchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -409,6 +411,107 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting task:", error);
       res.status(500).json({ error: "Failed to delete task" });
+    }
+  });
+
+  // Tags routes
+  app.get("/api/tags", async (req, res) => {
+    try {
+      const tags = await storage.getTags();
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      res.status(500).json({ error: "Failed to fetch tags" });
+    }
+  });
+
+  app.post("/api/tags", async (req, res) => {
+    try {
+      const data = insertTagSchema.parse(req.body);
+      const tag = await storage.createTag(data);
+      res.status(201).json(tag);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating tag:", error);
+      res.status(500).json({ error: "Failed to create tag" });
+    }
+  });
+
+  app.delete("/api/tags/:id", async (req, res) => {
+    try {
+      await storage.deleteTag(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      res.status(500).json({ error: "Failed to delete tag" });
+    }
+  });
+
+  // Contact tags routes
+  app.get("/api/contacts/:contactId/tags", async (req, res) => {
+    try {
+      const tags = await storage.getContactTags(req.params.contactId);
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching contact tags:", error);
+      res.status(500).json({ error: "Failed to fetch contact tags" });
+    }
+  });
+
+  app.post("/api/contacts/:contactId/tags/:tagId", async (req, res) => {
+    try {
+      const contactTag = await storage.addTagToContact(req.params.contactId, req.params.tagId);
+      res.status(201).json(contactTag);
+    } catch (error) {
+      console.error("Error adding tag to contact:", error);
+      res.status(500).json({ error: "Failed to add tag to contact" });
+    }
+  });
+
+  app.delete("/api/contacts/:contactId/tags/:tagId", async (req, res) => {
+    try {
+      await storage.removeTagFromContact(req.params.contactId, req.params.tagId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing tag from contact:", error);
+      res.status(500).json({ error: "Failed to remove tag from contact" });
+    }
+  });
+
+  // Activities routes
+  app.get("/api/activities", async (req, res) => {
+    try {
+      const { contactId, companyId, dealId } = req.query;
+      let activities;
+      if (typeof contactId === "string") {
+        activities = await storage.getActivitiesByContact(contactId);
+      } else if (typeof companyId === "string") {
+        activities = await storage.getActivitiesByCompany(companyId);
+      } else if (typeof dealId === "string") {
+        activities = await storage.getActivitiesByDeal(dealId);
+      } else {
+        activities = await storage.getActivities();
+      }
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
+
+  app.post("/api/activities", async (req, res) => {
+    try {
+      const data = insertActivitySchema.parse(req.body);
+      const activity = await storage.createActivity(data);
+      res.status(201).json(activity);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating activity:", error);
+      res.status(500).json({ error: "Failed to create activity" });
     }
   });
 

@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/form";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload, Tags } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +37,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertContactSchema, contactStatuses, type Contact, type Company, type InsertContact } from "@shared/schema";
+import { insertContactSchema, contactStatuses, type Contact, type Company, type InsertContact, type Tag } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -54,6 +55,7 @@ export default function Contacts() {
   const [location] = useLocation();
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -66,6 +68,79 @@ export default function Contacts() {
   const { data: companies } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
   });
+
+  const { data: allTags } = useQuery<Tag[]>({
+    queryKey: ["/api/tags"],
+  });
+
+  const exportToCSV = () => {
+    if (!contacts || contacts.length === 0) {
+      toast({ title: "No contacts to export", variant: "destructive" });
+      return;
+    }
+    const headers = ["First Name", "Last Name", "Email", "Phone", "Job Title", "Company", "Status"];
+    const csvContent = [
+      headers.join(","),
+      ...contacts.map(c => [
+        `"${c.firstName}"`,
+        `"${c.lastName}"`,
+        `"${c.email}"`,
+        `"${c.phone || ""}"`,
+        `"${c.jobTitle || ""}"`,
+        `"${getCompanyName(c.companyId)}"`,
+        `"${c.status}"`
+      ].join(","))
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "contacts.csv";
+    link.click();
+    toast({ title: "Contacts exported successfully" });
+  };
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split("\n").filter(line => line.trim());
+      if (lines.length <= 1) {
+        toast({ title: "No data found in CSV", variant: "destructive" });
+        return;
+      }
+      
+      let imported = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        if (values && values.length >= 3) {
+          const cleanValue = (v: string) => v?.replace(/^"|"$/g, "").trim() || "";
+          try {
+            await apiRequest("POST", "/api/contacts", {
+              firstName: cleanValue(values[0]),
+              lastName: cleanValue(values[1]),
+              email: cleanValue(values[2]),
+              phone: cleanValue(values[3]) || null,
+              jobTitle: cleanValue(values[4]) || null,
+              status: cleanValue(values[6]) || "lead",
+            });
+            imported++;
+          } catch (err) {
+            console.error("Failed to import row:", i, err);
+          }
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/contacts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
+      toast({ title: `Imported ${imported} contacts successfully` });
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  };
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -185,11 +260,13 @@ export default function Contacts() {
 
   const filteredContacts = contacts?.filter((contact) => {
     const searchLower = searchQuery.toLowerCase();
-    return (
+    const matchesSearch = (
       contact.firstName.toLowerCase().includes(searchLower) ||
       contact.lastName.toLowerCase().includes(searchLower) ||
       contact.email.toLowerCase().includes(searchLower)
     );
+    const matchesStatus = statusFilter === "all" || contact.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   const getCompanyName = (companyId: string | null) => {
@@ -273,13 +350,34 @@ export default function Contacts() {
             Manage your contacts and leads
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-contact">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Contact
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" onClick={exportToCSV} data-testid="button-export-csv">
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+          <label>
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleImportCSV}
+              data-testid="input-import-csv"
+            />
+            <Button variant="outline" asChild>
+              <span>
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </span>
+            </Button>
+          </label>
+          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-contact">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Contact
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -290,6 +388,19 @@ export default function Contacts() {
             data-testid="input-search-contacts"
           />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40" data-testid="select-status-filter">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {contactStatuses.map((status) => (
+              <SelectItem key={status} value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <DataTable

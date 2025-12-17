@@ -4,6 +4,9 @@ import {
   deals,
   notes,
   tasks,
+  tags,
+  contactTags,
+  activities,
   type Contact,
   type InsertContact,
   type Company,
@@ -14,9 +17,15 @@ import {
   type InsertNote,
   type Task,
   type InsertTask,
+  type Tag,
+  type InsertTag,
+  type ContactTag,
+  type InsertContactTag,
+  type Activity,
+  type InsertActivity,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 
 function filterUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return Object.fromEntries(
@@ -69,6 +78,21 @@ export interface IStorage {
     pipelineValue: number;
     wonDeals: number;
   }>;
+
+  getTags(): Promise<Tag[]>;
+  getTag(id: string): Promise<Tag | undefined>;
+  createTag(tag: InsertTag): Promise<Tag>;
+  deleteTag(id: string): Promise<boolean>;
+
+  getContactTags(contactId: string): Promise<Tag[]>;
+  addTagToContact(contactId: string, tagId: string): Promise<ContactTag>;
+  removeTagFromContact(contactId: string, tagId: string): Promise<boolean>;
+
+  getActivities(): Promise<Activity[]>;
+  getActivitiesByContact(contactId: string): Promise<Activity[]>;
+  getActivitiesByCompany(companyId: string): Promise<Activity[]>;
+  getActivitiesByDeal(dealId: string): Promise<Activity[]>;
+  createActivity(activity: InsertActivity): Promise<Activity>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -260,6 +284,68 @@ export class DatabaseStorage implements IStorage {
       pipelineValue: Number(pipelineResult?.total ?? 0),
       wonDeals: Number(wonResult?.count ?? 0),
     };
+  }
+
+  async getTags(): Promise<Tag[]> {
+    return db.select().from(tags).orderBy(tags.name);
+  }
+
+  async getTag(id: string): Promise<Tag | undefined> {
+    const [tag] = await db.select().from(tags).where(eq(tags.id, id));
+    return tag || undefined;
+  }
+
+  async createTag(tag: InsertTag): Promise<Tag> {
+    const [newTag] = await db.insert(tags).values(tag).returning();
+    return newTag;
+  }
+
+  async deleteTag(id: string): Promise<boolean> {
+    await db.delete(contactTags).where(eq(contactTags.tagId, id));
+    await db.delete(tags).where(eq(tags.id, id));
+    return true;
+  }
+
+  async getContactTags(contactId: string): Promise<Tag[]> {
+    const result = await db
+      .select({ tag: tags })
+      .from(contactTags)
+      .innerJoin(tags, eq(contactTags.tagId, tags.id))
+      .where(eq(contactTags.contactId, contactId));
+    return result.map(r => r.tag);
+  }
+
+  async addTagToContact(contactId: string, tagId: string): Promise<ContactTag> {
+    const [ct] = await db.insert(contactTags).values({ contactId, tagId }).returning();
+    return ct;
+  }
+
+  async removeTagFromContact(contactId: string, tagId: string): Promise<boolean> {
+    await db.delete(contactTags).where(
+      and(eq(contactTags.contactId, contactId), eq(contactTags.tagId, tagId))
+    );
+    return true;
+  }
+
+  async getActivities(): Promise<Activity[]> {
+    return db.select().from(activities).orderBy(desc(activities.createdAt)).limit(50);
+  }
+
+  async getActivitiesByContact(contactId: string): Promise<Activity[]> {
+    return db.select().from(activities).where(eq(activities.contactId, contactId)).orderBy(desc(activities.createdAt));
+  }
+
+  async getActivitiesByCompany(companyId: string): Promise<Activity[]> {
+    return db.select().from(activities).where(eq(activities.companyId, companyId)).orderBy(desc(activities.createdAt));
+  }
+
+  async getActivitiesByDeal(dealId: string): Promise<Activity[]> {
+    return db.select().from(activities).where(eq(activities.dealId, dealId)).orderBy(desc(activities.createdAt));
+  }
+
+  async createActivity(activity: InsertActivity): Promise<Activity> {
+    const [newActivity] = await db.insert(activities).values(activity).returning();
+    return newActivity;
   }
 }
 
