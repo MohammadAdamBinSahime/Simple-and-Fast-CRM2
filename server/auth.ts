@@ -81,6 +81,17 @@ export function setupAuth(app: Express): void {
         if (!isValid) {
           return done(null, false, { message: "Invalid username or password" });
         }
+        
+        // Check if free trial has expired (older than 7 days and on free_trial)
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const isExpired = user.subscriptionStatus === "free_trial" && 
+                          new Date(user.createdAt) < sevenDaysAgo &&
+                          user.role !== "admin";
+        
+        if (isExpired) {
+          return done(null, false, { message: "Your free trial has expired. Please subscribe to continue." });
+        }
+        
         return done(null, { id: user.id, username: user.username, role: user.role });
       } catch (error) {
         return done(error);
@@ -199,10 +210,17 @@ export function setupAuth(app: Express): void {
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       
-      const enrichedUsers = users.map(({ password, ...rest }) => ({
-        ...rest,
-        isOlderThan7Days: new Date(rest.createdAt) < sevenDaysAgo,
-      }));
+      const enrichedUsers = users.map(({ password, ...rest }) => {
+        const isOlderThan7Days = new Date(rest.createdAt) < sevenDaysAgo;
+        const isExpired = rest.subscriptionStatus === "free_trial" && 
+                          isOlderThan7Days && 
+                          rest.role !== "admin";
+        return {
+          ...rest,
+          isOlderThan7Days,
+          isExpired,
+        };
+      });
       res.json(enrichedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);

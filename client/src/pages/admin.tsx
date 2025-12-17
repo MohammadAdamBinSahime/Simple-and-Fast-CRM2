@@ -13,6 +13,7 @@ interface User {
   subscriptionStatus: string;
   createdAt: string;
   isOlderThan7Days: boolean;
+  isExpired: boolean;
 }
 
 interface Activity {
@@ -159,6 +160,14 @@ export default function Admin() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap justify-end">
+                        {user.isExpired && (
+                          <Badge 
+                            variant="destructive"
+                            data-testid={`badge-expired-${user.id}`}
+                          >
+                            Expired
+                          </Badge>
+                        )}
                         <Badge 
                           variant="outline" 
                           className={user.isOlderThan7Days 
