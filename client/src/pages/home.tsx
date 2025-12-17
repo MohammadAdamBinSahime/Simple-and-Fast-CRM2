@@ -57,11 +57,18 @@ export default function Home() {
             <span className="text-xl font-bold" data-testid="text-logo">Simple & Fast CRM</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" data-testid="button-login-nav" asChild>
-              <a href="/api/login">Login</a>
+            <Button 
+              variant="ghost" 
+              data-testid="button-login-nav" 
+              onClick={() => window.location.href = "/api/login"}
+            >
+              Login
             </Button>
-            <Button data-testid="button-get-started-nav" asChild>
-              <a href="/api/login">Get Started</a>
+            <Button 
+              data-testid="button-get-started-nav" 
+              onClick={() => window.location.href = "/api/login"}
+            >
+              Get Started
             </Button>
           </div>
         </div>
@@ -76,8 +83,12 @@ export default function Home() {
             Streamline your sales process with a powerful, intuitive CRM. Manage contacts, track deals, and close more business.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Button size="lg" data-testid="button-start-free" asChild>
-              <a href="/api/login">Start Free</a>
+            <Button 
+              size="lg" 
+              data-testid="button-start-free" 
+              onClick={() => window.location.href = "/api/login"}
+            >
+              Start Free
             </Button>
             <Button variant="outline" size="lg" data-testid="button-learn-more">
               Learn More
@@ -128,8 +139,12 @@ export default function Home() {
           <p className="text-muted-foreground mb-8">
             Join thousands of teams using our CRM to close more deals and build better customer relationships.
           </p>
-          <Button size="lg" data-testid="button-start-trial" asChild>
-            <a href="/api/login">Start Your Free Trial</a>
+          <Button 
+            size="lg" 
+            data-testid="button-start-trial" 
+            onClick={() => window.location.href = "/api/login"}
+          >
+            Start Your Free Trial
           </Button>
           <p className="text-sm text-muted-foreground mt-4">
             No credit card required. Cancel anytime.
