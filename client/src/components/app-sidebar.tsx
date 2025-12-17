@@ -79,7 +79,7 @@ export function AppSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <HandshakeIcon className="h-4 w-4" />
           </div>
-          <span className="text-lg font-semibold" data-testid="text-app-title">CRM</span>
+          <span className="text-lg font-semibold" data-testid="text-app-title">Simple & Fast CRM</span>
         </div>
       </SidebarHeader>
       <SidebarContent>

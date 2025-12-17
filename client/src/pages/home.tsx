@@ -55,7 +55,7 @@ export default function Home() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <HandshakeIcon className="h-4 w-4" />
             </div>
-            <span className="text-xl font-bold" data-testid="text-logo">CRM</span>
+            <span className="text-xl font-bold" data-testid="text-logo">Simple & Fast CRM</span>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/login">
@@ -148,7 +148,7 @@ export default function Home() {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <HandshakeIcon className="h-3 w-3" />
             </div>
-            <span className="text-sm font-medium">CRM</span>
+            <span className="text-sm font-medium">Simple & Fast CRM</span>
           </div>
           <p className="text-sm text-muted-foreground">
 Built with modern technologies.
