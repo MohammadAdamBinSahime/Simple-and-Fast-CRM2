@@ -7,12 +7,17 @@ import { z } from "zod";
 export const userRoles = ["user", "admin"] as const;
 export type UserRole = typeof userRoles[number];
 
+// Subscription statuses
+export const subscriptionStatuses = ["free_trial", "subscribed"] as const;
+export type SubscriptionStatus = typeof subscriptionStatuses[number];
+
 // Users table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   role: text("role").notNull().default("user"),
+  subscriptionStatus: text("subscription_status").notNull().default("free_trial"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -159,6 +164,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   role: true,
+  subscriptionStatus: true,
 });
 
 export const insertLoginActivitySchema = createInsertSchema(loginActivities).omit({

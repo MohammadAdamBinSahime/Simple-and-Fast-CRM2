@@ -45,6 +45,7 @@ async function ensureAdminExists(): Promise<void> {
       username: adminUsername,
       password: hashedPassword,
       role: "admin",
+      subscriptionStatus: "subscribed",
     });
     console.log("Admin user created: username=admin, password=admin123");
   }
@@ -195,8 +196,14 @@ export function setupAuth(app: Express): void {
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const users = await storage.getUsers();
-      const safeUsers = users.map(({ password, ...rest }) => rest);
-      res.json(safeUsers);
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const enrichedUsers = users.map(({ password, ...rest }) => ({
+        ...rest,
+        isOlderThan7Days: new Date(rest.createdAt) < sevenDaysAgo,
+      }));
+      res.json(enrichedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ error: "Failed to fetch users" });

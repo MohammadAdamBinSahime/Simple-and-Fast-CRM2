@@ -10,7 +10,9 @@ interface User {
   id: string;
   username: string;
   role: string;
+  subscriptionStatus: string;
   createdAt: string;
+  isOlderThan7Days: boolean;
 }
 
 interface Activity {
@@ -156,9 +158,31 @@ export default function Admin() {
                           </p>
                         </div>
                       </div>
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                        {user.role}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <Badge 
+                          variant="outline" 
+                          className={user.isOlderThan7Days 
+                            ? "bg-green-500/10 text-green-600 border-green-500/20" 
+                            : "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                          }
+                          data-testid={`badge-account-age-${user.id}`}
+                        >
+                          {user.isOlderThan7Days ? "Established" : "New (< 7 days)"}
+                        </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className={user.subscriptionStatus === "subscribed" 
+                            ? "bg-blue-500/10 text-blue-600 border-blue-500/20" 
+                            : "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                          }
+                          data-testid={`badge-subscription-${user.id}`}
+                        >
+                          {user.subscriptionStatus === "subscribed" ? "Subscribed" : "Free Trial"}
+                        </Badge>
+                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                          {user.role}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
