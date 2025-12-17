@@ -18,6 +18,7 @@ import Tasks from "@/pages/tasks";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import Admin from "@/pages/admin";
+import Home from "@/pages/home";
 import { Loader2 } from "lucide-react";
 
 function Router() {
@@ -64,6 +65,16 @@ function AuthenticatedApp() {
   );
 }
 
+function PublicRouter() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
+      <Route component={Home} />
+    </Switch>
+  );
+}
+
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -76,7 +87,7 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    return <PublicRouter />;
   }
 
   return <AuthenticatedApp />;
