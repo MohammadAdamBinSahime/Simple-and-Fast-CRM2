@@ -23,12 +23,6 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// Setup Replit Auth (must be before other routes)
-(async () => {
-  await setupAuth(app);
-  registerAuthRoutes(app);
-})();
-
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -67,6 +61,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Setup Replit Auth FIRST (must be before other routes)
+  await setupAuth(app);
+  registerAuthRoutes(app);
+  
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
