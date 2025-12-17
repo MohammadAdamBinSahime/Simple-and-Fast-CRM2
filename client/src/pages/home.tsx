@@ -1,4 +1,3 @@
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -58,12 +57,12 @@ export default function Home() {
             <span className="text-xl font-bold" data-testid="text-logo">Simple & Fast CRM</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/login">
-              <Button variant="ghost" data-testid="button-login-nav">Login</Button>
-            </Link>
-            <Link href="/login">
-              <Button data-testid="button-get-started-nav">Get Started</Button>
-            </Link>
+            <Button variant="ghost" data-testid="button-login-nav" asChild>
+              <a href="/api/login">Login</a>
+            </Button>
+            <Button data-testid="button-get-started-nav" asChild>
+              <a href="/api/login">Get Started</a>
+            </Button>
           </div>
         </div>
       </header>
@@ -77,11 +76,9 @@ export default function Home() {
             Streamline your sales process with a powerful, intuitive CRM. Manage contacts, track deals, and close more business.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/login">
-              <Button size="lg" data-testid="button-start-free">
-                Start Free Trial
-              </Button>
-            </Link>
+            <Button size="lg" data-testid="button-start-free" asChild>
+              <a href="/api/login">Start Free</a>
+            </Button>
             <Button variant="outline" size="lg" data-testid="button-learn-more">
               Learn More
             </Button>
@@ -131,11 +128,9 @@ export default function Home() {
           <p className="text-muted-foreground mb-8">
             Join thousands of teams using our CRM to close more deals and build better customer relationships.
           </p>
-          <Link href="/login">
-            <Button size="lg" data-testid="button-start-trial">
-              Start Your Free 7-Day Trial
-            </Button>
-          </Link>
+          <Button size="lg" data-testid="button-start-trial" asChild>
+            <a href="/api/login">Start Your Free Trial</a>
+          </Button>
           <p className="text-sm text-muted-foreground mt-4">
             No credit card required. Cancel anytime.
           </p>

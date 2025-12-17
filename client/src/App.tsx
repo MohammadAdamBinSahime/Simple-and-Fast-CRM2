@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandSearch } from "@/components/command-search";
-import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
@@ -16,14 +16,10 @@ import Companies from "@/pages/companies";
 import Deals from "@/pages/deals";
 import Tasks from "@/pages/tasks";
 import Settings from "@/pages/settings";
-import Login from "@/pages/login";
-import Admin from "@/pages/admin";
 import Home from "@/pages/home";
 import { Loader2 } from "lucide-react";
 
 function Router() {
-  const { user } = useAuth();
-  
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -32,7 +28,6 @@ function Router() {
       <Route path="/deals" component={Deals} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/settings" component={Settings} />
-      {user?.role === "admin" && <Route path="/admin" component={Admin} />}
       <Route component={NotFound} />
     </Switch>
   );
@@ -65,16 +60,6 @@ function AuthenticatedApp() {
   );
 }
 
-function PublicRouter() {
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/login" component={Login} />
-      <Route component={Home} />
-    </Switch>
-  );
-}
-
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -87,7 +72,7 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <PublicRouter />;
+    return <Home />;
   }
 
   return <AuthenticatedApp />;
@@ -98,9 +83,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="crm-theme">
         <TooltipProvider>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
+          <AppContent />
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>

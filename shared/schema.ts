@@ -3,38 +3,8 @@ import { pgTable, text, varchar, integer, timestamp, decimal } from "drizzle-orm
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User roles
-export const userRoles = ["user", "admin"] as const;
-export type UserRole = typeof userRoles[number];
-
-// Subscription statuses
-export const subscriptionStatuses = ["free_trial", "subscribed"] as const;
-export type SubscriptionStatus = typeof subscriptionStatuses[number];
-
-// Users table
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role").notNull().default("user"),
-  subscriptionStatus: text("subscription_status").notNull().default("free_trial"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-// Activity types
-export const activityTypes = ["login", "logout", "register"] as const;
-export type ActivityType = typeof activityTypes[number];
-
-// Login activities table
-export const loginActivities = pgTable("login_activities", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  username: text("username").notNull(),
-  eventType: text("event_type").notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+// Re-export auth schema
+export * from "./models/auth";
 
 // Companies table
 export const companies = pgTable("companies", {
@@ -160,18 +130,6 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
 }));
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  role: true,
-  subscriptionStatus: true,
-});
-
-export const insertLoginActivitySchema = createInsertSchema(loginActivities).omit({
-  id: true,
-  createdAt: true,
-});
-
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
   createdAt: true,
@@ -198,12 +156,6 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
 });
 
 // Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-
-export type InsertLoginActivity = z.infer<typeof insertLoginActivitySchema>;
-export type LoginActivity = typeof loginActivities.$inferSelect;
-
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
 

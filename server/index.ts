@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 
 const app = express();
 const httpServer = createServer(app);
@@ -23,7 +23,11 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-setupAuth(app);
+// Setup Replit Auth (must be before other routes)
+(async () => {
+  await setupAuth(app);
+  registerAuthRoutes(app);
+})();
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

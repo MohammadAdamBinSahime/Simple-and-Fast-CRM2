@@ -1,13 +1,9 @@
 import {
-  users,
   contacts,
   companies,
   deals,
   notes,
   tasks,
-  loginActivities,
-  type User,
-  type InsertUser,
   type Contact,
   type InsertContact,
   type Company,
@@ -18,8 +14,6 @@ import {
   type InsertNote,
   type Task,
   type InsertTask,
-  type LoginActivity,
-  type InsertLoginActivity,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -31,14 +25,6 @@ function filterUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> 
 }
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  getUsers(): Promise<User[]>;
-  
-  createLoginActivity(activity: InsertLoginActivity): Promise<LoginActivity>;
-  getLoginActivities(eventType?: string): Promise<LoginActivity[]>;
-
   getContacts(): Promise<Contact[]>;
   getContact(id: string): Promise<Contact | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
@@ -86,37 +72,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
-  }
-
-  async getUsers(): Promise<User[]> {
-    return db.select().from(users).orderBy(desc(users.createdAt));
-  }
-
-  async createLoginActivity(activity: InsertLoginActivity): Promise<LoginActivity> {
-    const [created] = await db.insert(loginActivities).values(activity).returning();
-    return created;
-  }
-
-  async getLoginActivities(eventType?: string): Promise<LoginActivity[]> {
-    if (eventType) {
-      return db.select().from(loginActivities).where(eq(loginActivities.eventType, eventType)).orderBy(desc(loginActivities.createdAt));
-    }
-    return db.select().from(loginActivities).orderBy(desc(loginActivities.createdAt));
-  }
-
   async getContacts(): Promise<Contact[]> {
     return db.select().from(contacts).orderBy(desc(contacts.createdAt));
   }

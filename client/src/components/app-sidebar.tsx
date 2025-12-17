@@ -7,7 +7,6 @@ import {
   CheckSquare,
   Settings,
   LogOut,
-  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -60,17 +59,10 @@ const settingsNavItems = [
   },
 ];
 
-const adminNavItems = [
-  {
-    title: "Admin",
-    url: "/admin",
-    icon: ShieldCheck,
-  },
-];
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user, logout, isLoggingOut } = useAuth();
+  const { user } = useAuth();
 
   return (
     <Sidebar>
@@ -127,45 +119,22 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {user?.role === "admin" && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Administration
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminNavItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location === item.url}
-                    >
-                      <Link href={item.url} data-testid={`nav-link-${item.title.toLowerCase()}`}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
       <SidebarFooter className="p-4 space-y-3">
         {user && (
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-medium truncate" data-testid="text-username">
-              {user.username}
+              {user.firstName || user.email || "User"}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              onClick={logout}
-              disabled={isLoggingOut}
+              asChild
               data-testid="button-logout"
             >
-              <LogOut className="h-4 w-4" />
+              <a href="/api/logout">
+                <LogOut className="h-4 w-4" />
+              </a>
             </Button>
           </div>
         )}
