@@ -5,6 +5,7 @@ import {
   deals,
   notes,
   tasks,
+  loginActivities,
   type User,
   type InsertUser,
   type Contact,
@@ -17,6 +18,8 @@ import {
   type InsertNote,
   type Task,
   type InsertTask,
+  type LoginActivity,
+  type InsertLoginActivity,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
@@ -31,6 +34,10 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  getUsers(): Promise<User[]>;
+  
+  createLoginActivity(activity: InsertLoginActivity): Promise<LoginActivity>;
+  getLoginActivities(eventType?: string): Promise<LoginActivity[]>;
 
   getContacts(): Promise<Contact[]>;
   getContact(id: string): Promise<Contact | undefined>;
@@ -92,6 +99,22 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async createLoginActivity(activity: InsertLoginActivity): Promise<LoginActivity> {
+    const [created] = await db.insert(loginActivities).values(activity).returning();
+    return created;
+  }
+
+  async getLoginActivities(eventType?: string): Promise<LoginActivity[]> {
+    if (eventType) {
+      return db.select().from(loginActivities).where(eq(loginActivities.eventType, eventType)).orderBy(desc(loginActivities.createdAt));
+    }
+    return db.select().from(loginActivities).orderBy(desc(loginActivities.createdAt));
   }
 
   async getContacts(): Promise<Contact[]> {

@@ -17,9 +17,12 @@ import Deals from "@/pages/deals";
 import Tasks from "@/pages/tasks";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
+import Admin from "@/pages/admin";
 import { Loader2 } from "lucide-react";
 
 function Router() {
+  const { user } = useAuth();
+  
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -28,6 +31,7 @@ function Router() {
       <Route path="/deals" component={Deals} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/settings" component={Settings} />
+      {user?.role === "admin" && <Route path="/admin" component={Admin} />}
       <Route component={NotFound} />
     </Switch>
   );

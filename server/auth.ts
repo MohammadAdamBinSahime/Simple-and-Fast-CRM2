@@ -1,17 +1,17 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { storage } from "./storage";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { users, insertUserSchema, type User } from "@shared/schema";
 
 declare global {
   namespace Express {
     interface User {
       id: string;
       username: string;
+      role: string;
     }
   }
 }
@@ -32,6 +32,22 @@ async function comparePasswords(
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+async function ensureAdminExists(): Promise<void> {
+  const adminUsername = "admin";
+  const adminPassword = "admin123";
+  
+  const existingAdmin = await storage.getUserByUsername(adminUsername);
+  if (!existingAdmin) {
+    const hashedPassword = await hashPassword(adminPassword);
+    await storage.createUser({
+      username: adminUsername,
+      password: hashedPassword,
+      role: "admin",
+    });
+    console.log("Admin user created: username=admin, password=admin123");
+  }
 }
 
 export function setupAuth(app: Express): void {
@@ -64,7 +80,7 @@ export function setupAuth(app: Express): void {
         if (!isValid) {
           return done(null, false, { message: "Invalid username or password" });
         }
-        return done(null, { id: user.id, username: user.username });
+        return done(null, { id: user.id, username: user.username, role: user.role });
       } catch (error) {
         return done(error);
       }
@@ -81,11 +97,13 @@ export function setupAuth(app: Express): void {
       if (!user) {
         return done(null, false);
       }
-      done(null, { id: user.id, username: user.username });
+      done(null, { id: user.id, username: user.username, role: user.role });
     } catch (error) {
       done(error);
     }
   });
+
+  ensureAdminExists().catch(console.error);
 
   app.post("/api/auth/register", async (req, res, next) => {
     try {
@@ -105,11 +123,19 @@ export function setupAuth(app: Express): void {
       }
 
       const hashedPassword = await hashPassword(password);
-      const user = await storage.createUser({ username, password: hashedPassword });
+      const user = await storage.createUser({ username, password: hashedPassword, role: "user" });
 
-      req.login({ id: user.id, username: user.username }, (err) => {
+      await storage.createLoginActivity({
+        userId: user.id,
+        username: user.username,
+        eventType: "register",
+        ipAddress: req.ip || req.socket.remoteAddress || null,
+        userAgent: req.headers["user-agent"] || null,
+      });
+
+      req.login({ id: user.id, username: user.username, role: user.role }, (err) => {
         if (err) return next(err);
-        res.status(201).json({ id: user.id, username: user.username });
+        res.status(201).json({ id: user.id, username: user.username, role: user.role });
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -118,19 +144,38 @@ export function setupAuth(app: Express): void {
   });
 
   app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
+    passport.authenticate("local", async (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) return next(err);
       if (!user) {
         return res.status(401).json({ error: info?.message || "Login failed" });
       }
+      
+      await storage.createLoginActivity({
+        userId: user.id,
+        username: user.username,
+        eventType: "login",
+        ipAddress: req.ip || req.socket.remoteAddress || null,
+        userAgent: req.headers["user-agent"] || null,
+      });
+
       req.login(user, (err) => {
         if (err) return next(err);
-        res.json({ id: user.id, username: user.username });
+        res.json({ id: user.id, username: user.username, role: user.role });
       });
     })(req, res, next);
   });
 
-  app.post("/api/auth/logout", (req, res) => {
+  app.post("/api/auth/logout", async (req, res) => {
+    if (req.user) {
+      await storage.createLoginActivity({
+        userId: req.user.id,
+        username: req.user.username,
+        eventType: "logout",
+        ipAddress: req.ip || req.socket.remoteAddress || null,
+        userAgent: req.headers["user-agent"] || null,
+      });
+    }
+    
     req.logout((err) => {
       if (err) {
         return res.status(500).json({ error: "Logout failed" });
@@ -141,16 +186,47 @@ export function setupAuth(app: Express): void {
 
   app.get("/api/auth/user", (req, res) => {
     if (req.isAuthenticated()) {
-      res.json({ id: req.user.id, username: req.user.username });
+      res.json({ id: req.user.id, username: req.user.username, role: req.user.role });
     } else {
       res.status(401).json({ error: "Not authenticated" });
     }
   });
+
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      const safeUsers = users.map(({ password, ...rest }) => rest);
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/admin/activities", requireAdmin, async (req, res) => {
+    try {
+      const { eventType } = req.query;
+      const activities = await storage.getLoginActivities(
+        typeof eventType === "string" ? eventType : undefined
+      );
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
 }
 
-export function requireAuth(req: Express.Request, res: Express.Response, next: Express.NextFunction): void {
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (req.isAuthenticated()) {
     return next();
   }
   res.status(401).json({ error: "Authentication required" });
+}
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (req.isAuthenticated() && req.user?.role === "admin") {
+    return next();
+  }
+  res.status(403).json({ error: "Admin access required" });
 }
