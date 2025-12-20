@@ -9,6 +9,9 @@ import {
   insertTaskSchema,
   insertTagSchema,
   insertActivitySchema,
+  insertEmailAccountSchema,
+  insertEmailTemplateSchema,
+  insertScheduledEmailSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -512,6 +515,275 @@ export async function registerRoutes(
       }
       console.error("Error creating activity:", error);
       res.status(500).json({ error: "Failed to create activity" });
+    }
+  });
+
+  // Helper to sanitize email account (remove sensitive tokens)
+  const sanitizeEmailAccount = (account: any) => ({
+    id: account.id,
+    userId: account.userId,
+    provider: account.provider,
+    email: account.email,
+    isDefault: account.isDefault,
+    createdAt: account.createdAt,
+  });
+
+  // Email accounts routes
+  app.get("/api/email-accounts", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const accounts = await storage.getEmailAccounts(req.user.id);
+      res.json(accounts.map(sanitizeEmailAccount));
+    } catch (error) {
+      console.error("Error fetching email accounts:", error);
+      res.status(500).json({ error: "Failed to fetch email accounts" });
+    }
+  });
+
+  app.get("/api/email-accounts/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const account = await storage.getEmailAccount(req.params.id);
+      if (!account) {
+        return res.status(404).json({ error: "Email account not found" });
+      }
+      if (account.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      res.json(sanitizeEmailAccount(account));
+    } catch (error) {
+      console.error("Error fetching email account:", error);
+      res.status(500).json({ error: "Failed to fetch email account" });
+    }
+  });
+
+  app.post("/api/email-accounts", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const data = insertEmailAccountSchema.parse({
+        ...req.body,
+        userId: req.user.id,
+      });
+      const account = await storage.createEmailAccount(data);
+      res.status(201).json(sanitizeEmailAccount(account));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating email account:", error);
+      res.status(500).json({ error: "Failed to create email account" });
+    }
+  });
+
+  app.delete("/api/email-accounts/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const account = await storage.getEmailAccount(req.params.id);
+      if (!account) {
+        return res.status(404).json({ error: "Email account not found" });
+      }
+      if (account.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      await storage.deleteEmailAccount(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting email account:", error);
+      res.status(500).json({ error: "Failed to delete email account" });
+    }
+  });
+
+  // Email templates routes
+  app.get("/api/email-templates", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const templates = await storage.getEmailTemplates(req.user.id);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching email templates:", error);
+      res.status(500).json({ error: "Failed to fetch email templates" });
+    }
+  });
+
+  app.get("/api/email-templates/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Email template not found" });
+      }
+      if (template.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching email template:", error);
+      res.status(500).json({ error: "Failed to fetch email template" });
+    }
+  });
+
+  app.post("/api/email-templates", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const data = insertEmailTemplateSchema.parse({
+        ...req.body,
+        userId: req.user.id,
+      });
+      const template = await storage.createEmailTemplate(data);
+      res.status(201).json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating email template:", error);
+      res.status(500).json({ error: "Failed to create email template" });
+    }
+  });
+
+  app.patch("/api/email-templates/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const existing = await storage.getEmailTemplate(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ error: "Email template not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      const template = await storage.updateEmailTemplate(req.params.id, req.body);
+      res.json(template);
+    } catch (error) {
+      console.error("Error updating email template:", error);
+      res.status(500).json({ error: "Failed to update email template" });
+    }
+  });
+
+  app.delete("/api/email-templates/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Email template not found" });
+      }
+      if (template.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      await storage.deleteEmailTemplate(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting email template:", error);
+      res.status(500).json({ error: "Failed to delete email template" });
+    }
+  });
+
+  // Scheduled emails routes
+  app.get("/api/scheduled-emails", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const emails = await storage.getScheduledEmails(req.user.id);
+      res.json(emails);
+    } catch (error) {
+      console.error("Error fetching scheduled emails:", error);
+      res.status(500).json({ error: "Failed to fetch scheduled emails" });
+    }
+  });
+
+  app.get("/api/scheduled-emails/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const email = await storage.getScheduledEmail(req.params.id);
+      if (!email) {
+        return res.status(404).json({ error: "Scheduled email not found" });
+      }
+      if (email.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      res.json(email);
+    } catch (error) {
+      console.error("Error fetching scheduled email:", error);
+      res.status(500).json({ error: "Failed to fetch scheduled email" });
+    }
+  });
+
+  app.post("/api/scheduled-emails", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const data = insertScheduledEmailSchema.parse({
+        ...req.body,
+        userId: req.user.id,
+      });
+      const email = await storage.createScheduledEmail(data);
+      res.status(201).json(email);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating scheduled email:", error);
+      res.status(500).json({ error: "Failed to create scheduled email" });
+    }
+  });
+
+  app.patch("/api/scheduled-emails/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const existing = await storage.getScheduledEmail(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ error: "Scheduled email not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      const email = await storage.updateScheduledEmail(req.params.id, req.body);
+      res.json(email);
+    } catch (error) {
+      console.error("Error updating scheduled email:", error);
+      res.status(500).json({ error: "Failed to update scheduled email" });
+    }
+  });
+
+  app.delete("/api/scheduled-emails/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const email = await storage.getScheduledEmail(req.params.id);
+      if (!email) {
+        return res.status(404).json({ error: "Scheduled email not found" });
+      }
+      if (email.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      await storage.deleteScheduledEmail(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting scheduled email:", error);
+      res.status(500).json({ error: "Failed to delete scheduled email" });
     }
   });
 

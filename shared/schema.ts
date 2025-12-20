@@ -94,6 +94,45 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Email accounts table for connected email providers
+export const emailAccounts = pgTable("email_accounts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  provider: text("provider").notNull(),
+  email: text("email").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiry: timestamp("token_expiry"),
+  isDefault: text("is_default").notNull().default("false"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Email templates
+export const emailTemplates = pgTable("email_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Scheduled emails
+export const scheduledEmails = pgTable("scheduled_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  emailAccountId: varchar("email_account_id").references(() => emailAccounts.id),
+  contactId: varchar("contact_id").references(() => contacts.id),
+  toEmail: text("to_email").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("draft"),
+  scheduledAt: timestamp("scheduled_at"),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const companiesRelations = relations(companies, ({ many }) => ({
   contacts: many(contacts),
@@ -225,6 +264,21 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
   createdAt: true,
 });
 
+export const insertEmailAccountSchema = createInsertSchema(emailAccounts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertScheduledEmailSchema = createInsertSchema(scheduledEmails).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
@@ -250,9 +304,26 @@ export type ContactTag = typeof contactTags.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 
+export type InsertEmailAccount = z.infer<typeof insertEmailAccountSchema>;
+export type EmailAccount = typeof emailAccounts.$inferSelect;
+
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+
+export type InsertScheduledEmail = z.infer<typeof insertScheduledEmailSchema>;
+export type ScheduledEmail = typeof scheduledEmails.$inferSelect;
+
 // Activity types
 export const activityTypes = ["call", "email", "meeting", "note", "task_completed", "deal_created", "deal_updated", "contact_created"] as const;
 export type ActivityType = typeof activityTypes[number];
+
+// Email provider types
+export const emailProviders = ["gmail", "outlook", "sendgrid", "resend"] as const;
+export type EmailProvider = typeof emailProviders[number];
+
+// Email status types
+export const emailStatuses = ["draft", "scheduled", "sending", "sent", "failed"] as const;
+export type EmailStatus = typeof emailStatuses[number];
 
 // Contact statuses
 export const contactStatuses = ["lead", "qualified", "customer", "inactive"] as const;

@@ -1,13 +1,36 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Monitor } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Moon, Sun, Monitor, Mail, Trash2, Loader2 } from "lucide-react";
+import { SiGmail, SiMicrosoft } from "react-icons/si";
 import { cn } from "@/lib/utils";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { EmailAccount } from "@shared/schema";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+
+  const { data: emailAccounts = [], isLoading: accountsLoading } = useQuery<EmailAccount[]>({
+    queryKey: ["/api/email-accounts"],
+  });
+
+  const deleteAccount = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest(`/api/email-accounts/${id}`, { method: "DELETE" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-accounts"] });
+      toast({ title: "Email account disconnected" });
+    },
+    onError: () => {
+      toast({ title: "Failed to disconnect account", variant: "destructive" });
+    },
+  });
 
   const themeOptions = [
     { value: "light", label: "Light", icon: Sun },
@@ -54,6 +77,88 @@ export default function Settings() {
                   );
                 })}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Email Accounts</CardTitle>
+            <CardDescription>
+              Connect your email accounts to send and schedule emails
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {accountsLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : emailAccounts.length > 0 ? (
+              <div className="space-y-3">
+                {emailAccounts.map((account) => (
+                  <div
+                    key={account.id}
+                    className="flex items-center justify-between gap-2 p-3 rounded-md border"
+                    data-testid={`email-account-${account.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {account.provider === "gmail" ? (
+                        <SiGmail className="h-5 w-5 text-red-500" />
+                      ) : account.provider === "outlook" ? (
+                        <SiMicrosoft className="h-5 w-5 text-blue-500" />
+                      ) : (
+                        <Mail className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{account.email}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{account.provider}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteAccount.mutate(account.id)}
+                      disabled={deleteAccount.isPending}
+                      data-testid={`button-disconnect-${account.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No email accounts connected yet
+              </p>
+            )}
+
+            <div className="pt-4 border-t">
+              <Label className="text-sm font-medium mb-3 block">Connect a new account</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  data-testid="button-connect-gmail"
+                  disabled
+                >
+                  <SiGmail className="h-4 w-4 text-red-500" />
+                  Gmail
+                  <Badge variant="secondary" className="ml-auto text-xs">Soon</Badge>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  data-testid="button-connect-outlook"
+                  disabled
+                >
+                  <SiMicrosoft className="h-4 w-4 text-blue-500" />
+                  Outlook
+                  <Badge variant="secondary" className="ml-auto text-xs">Soon</Badge>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Email integration requires setup. Contact your administrator to enable Gmail or Outlook connections.
+              </p>
             </div>
           </CardContent>
         </Card>

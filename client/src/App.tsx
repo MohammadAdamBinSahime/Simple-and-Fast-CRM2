@@ -15,6 +15,7 @@ import Contacts from "@/pages/contacts";
 import Companies from "@/pages/companies";
 import Deals from "@/pages/deals";
 import Tasks from "@/pages/tasks";
+import Email from "@/pages/email";
 import Settings from "@/pages/settings";
 import Home from "@/pages/home";
 import { Loader2 } from "lucide-react";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/companies" component={Companies} />
       <Route path="/deals" component={Deals} />
       <Route path="/tasks" component={Tasks} />
+      <Route path="/email" component={Email} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>

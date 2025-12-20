@@ -5,6 +5,7 @@ import {
   Building2,
   HandshakeIcon,
   CheckSquare,
+  Mail,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -48,6 +49,11 @@ const mainNavItems = [
     title: "Tasks",
     url: "/tasks",
     icon: CheckSquare,
+  },
+  {
+    title: "Email",
+    url: "/email",
+    icon: Mail,
   },
 ];
 

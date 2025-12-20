@@ -7,6 +7,9 @@ import {
   tags,
   contactTags,
   activities,
+  emailAccounts,
+  emailTemplates,
+  scheduledEmails,
   type Contact,
   type InsertContact,
   type Company,
@@ -23,6 +26,12 @@ import {
   type InsertContactTag,
   type Activity,
   type InsertActivity,
+  type EmailAccount,
+  type InsertEmailAccount,
+  type EmailTemplate,
+  type InsertEmailTemplate,
+  type ScheduledEmail,
+  type InsertScheduledEmail,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -93,6 +102,25 @@ export interface IStorage {
   getActivitiesByCompany(companyId: string): Promise<Activity[]>;
   getActivitiesByDeal(dealId: string): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
+
+  getEmailAccounts(userId: string): Promise<EmailAccount[]>;
+  getEmailAccount(id: string): Promise<EmailAccount | undefined>;
+  createEmailAccount(account: InsertEmailAccount): Promise<EmailAccount>;
+  updateEmailAccount(id: string, account: Partial<InsertEmailAccount>): Promise<EmailAccount | undefined>;
+  deleteEmailAccount(id: string): Promise<boolean>;
+
+  getEmailTemplates(userId: string): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined>;
+  deleteEmailTemplate(id: string): Promise<boolean>;
+
+  getScheduledEmails(userId: string): Promise<ScheduledEmail[]>;
+  getScheduledEmail(id: string): Promise<ScheduledEmail | undefined>;
+  getPendingScheduledEmails(): Promise<ScheduledEmail[]>;
+  createScheduledEmail(email: InsertScheduledEmail): Promise<ScheduledEmail>;
+  updateScheduledEmail(id: string, email: Partial<InsertScheduledEmail>): Promise<ScheduledEmail | undefined>;
+  deleteScheduledEmail(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -346,6 +374,99 @@ export class DatabaseStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const [newActivity] = await db.insert(activities).values(activity).returning();
     return newActivity;
+  }
+
+  async getEmailAccounts(userId: string): Promise<EmailAccount[]> {
+    return db.select().from(emailAccounts).where(eq(emailAccounts.userId, userId)).orderBy(desc(emailAccounts.createdAt));
+  }
+
+  async getEmailAccount(id: string): Promise<EmailAccount | undefined> {
+    const [account] = await db.select().from(emailAccounts).where(eq(emailAccounts.id, id));
+    return account || undefined;
+  }
+
+  async createEmailAccount(account: InsertEmailAccount): Promise<EmailAccount> {
+    const [newAccount] = await db.insert(emailAccounts).values(account).returning();
+    return newAccount;
+  }
+
+  async updateEmailAccount(id: string, account: Partial<InsertEmailAccount>): Promise<EmailAccount | undefined> {
+    const filtered = filterUndefined(account);
+    if (Object.keys(filtered).length === 0) {
+      return this.getEmailAccount(id);
+    }
+    const [updated] = await db.update(emailAccounts).set(filtered).where(eq(emailAccounts.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteEmailAccount(id: string): Promise<boolean> {
+    await db.delete(emailAccounts).where(eq(emailAccounts.id, id));
+    return true;
+  }
+
+  async getEmailTemplates(userId: string): Promise<EmailTemplate[]> {
+    return db.select().from(emailTemplates).where(eq(emailTemplates.userId, userId)).orderBy(desc(emailTemplates.createdAt));
+  }
+
+  async getEmailTemplate(id: string): Promise<EmailTemplate | undefined> {
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id));
+    return template || undefined;
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const [newTemplate] = await db.insert(emailTemplates).values(template).returning();
+    return newTemplate;
+  }
+
+  async updateEmailTemplate(id: string, template: Partial<InsertEmailTemplate>): Promise<EmailTemplate | undefined> {
+    const filtered = filterUndefined(template);
+    if (Object.keys(filtered).length === 0) {
+      return this.getEmailTemplate(id);
+    }
+    const [updated] = await db.update(emailTemplates).set(filtered).where(eq(emailTemplates.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteEmailTemplate(id: string): Promise<boolean> {
+    await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+    return true;
+  }
+
+  async getScheduledEmails(userId: string): Promise<ScheduledEmail[]> {
+    return db.select().from(scheduledEmails).where(eq(scheduledEmails.userId, userId)).orderBy(desc(scheduledEmails.createdAt));
+  }
+
+  async getScheduledEmail(id: string): Promise<ScheduledEmail | undefined> {
+    const [email] = await db.select().from(scheduledEmails).where(eq(scheduledEmails.id, id));
+    return email || undefined;
+  }
+
+  async getPendingScheduledEmails(): Promise<ScheduledEmail[]> {
+    return db.select().from(scheduledEmails)
+      .where(and(
+        eq(scheduledEmails.status, "scheduled"),
+        sql`scheduled_at <= NOW()`
+      ))
+      .orderBy(scheduledEmails.scheduledAt);
+  }
+
+  async createScheduledEmail(email: InsertScheduledEmail): Promise<ScheduledEmail> {
+    const [newEmail] = await db.insert(scheduledEmails).values(email).returning();
+    return newEmail;
+  }
+
+  async updateScheduledEmail(id: string, email: Partial<InsertScheduledEmail>): Promise<ScheduledEmail | undefined> {
+    const filtered = filterUndefined(email);
+    if (Object.keys(filtered).length === 0) {
+      return this.getScheduledEmail(id);
+    }
+    const [updated] = await db.update(scheduledEmails).set(filtered).where(eq(scheduledEmails.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteScheduledEmail(id: string): Promise<boolean> {
+    await db.delete(scheduledEmails).where(eq(scheduledEmails.id, id));
+    return true;
   }
 }
 
