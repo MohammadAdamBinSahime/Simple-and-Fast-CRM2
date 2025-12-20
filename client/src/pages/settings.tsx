@@ -4,7 +4,7 @@ import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Moon, Sun, Monitor, Mail, Trash2, Loader2 } from "lucide-react";
-import { SiGmail, SiMicrosoft } from "react-icons/si";
+import { SiGmail } from "react-icons/si";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -105,7 +105,7 @@ export default function Settings() {
                       {account.provider === "gmail" ? (
                         <SiGmail className="h-5 w-5 text-red-500" />
                       ) : account.provider === "outlook" ? (
-                        <SiMicrosoft className="h-5 w-5 text-blue-500" />
+                        <Mail className="h-5 w-5 text-blue-500" />
                       ) : (
                         <Mail className="h-5 w-5 text-muted-foreground" />
                       )}
@@ -151,7 +151,7 @@ export default function Settings() {
                   data-testid="button-connect-outlook"
                   disabled
                 >
-                  <SiMicrosoft className="h-4 w-4 text-blue-500" />
+                  <Mail className="h-4 w-4 text-blue-500" />
                   Outlook
                   <Badge variant="secondary" className="ml-auto text-xs">Soon</Badge>
                 </Button>
