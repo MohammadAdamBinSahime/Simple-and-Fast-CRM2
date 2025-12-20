@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import {
+  insertPropertySchema,
   insertContactSchema,
   insertCompanySchema,
   insertDealSchema,
@@ -14,6 +15,33 @@ import {
   insertScheduledEmailSchema,
 } from "@shared/schema";
 import { z } from "zod";
+
+const updatePropertySchema = z.object({
+  title: z.string().optional(),
+  address: z.string().optional(),
+  state: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  area: z.string().nullable().optional(),
+  propertyType: z.string().optional(),
+  listingType: z.string().optional(),
+  price: z.string().optional(),
+  bedrooms: z.number().nullable().optional(),
+  bathrooms: z.number().nullable().optional(),
+  squareFeet: z.number().nullable().optional(),
+  landSize: z.number().nullable().optional(),
+  tenure: z.string().nullable().optional(),
+  tenureYearsRemaining: z.number().nullable().optional(),
+  bumiLot: z.string().optional(),
+  titleType: z.string().nullable().optional(),
+  maintenanceFee: z.string().nullable().optional(),
+  status: z.string().optional(),
+  description: z.string().nullable().optional(),
+  photos: z.string().nullable().optional(),
+  virtualTourLink: z.string().nullable().optional(),
+  portalListingId: z.string().nullable().optional(),
+  portalSource: z.string().nullable().optional(),
+  ownerId: z.string().nullable().optional(),
+});
 
 const updateContactSchema = z.object({
   firstName: z.string().optional(),
@@ -74,6 +102,71 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
       res.status(500).json({ error: "Failed to fetch dashboard metrics" });
+    }
+  });
+
+  // Properties routes
+  app.get("/api/properties", async (req, res) => {
+    try {
+      const propertiesList = await storage.getProperties();
+      res.json(propertiesList);
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+      res.status(500).json({ error: "Failed to fetch properties" });
+    }
+  });
+
+  app.get("/api/properties/:id", async (req, res) => {
+    try {
+      const property = await storage.getProperty(req.params.id);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+      res.json(property);
+    } catch (error) {
+      console.error("Error fetching property:", error);
+      res.status(500).json({ error: "Failed to fetch property" });
+    }
+  });
+
+  app.post("/api/properties", async (req, res) => {
+    try {
+      const data = insertPropertySchema.parse(req.body);
+      const property = await storage.createProperty(data);
+      res.status(201).json(property);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating property:", error);
+      res.status(500).json({ error: "Failed to create property" });
+    }
+  });
+
+  app.patch("/api/properties/:id", async (req, res) => {
+    try {
+      const data = updatePropertySchema.parse(req.body);
+      const property = await storage.updateProperty(req.params.id, data);
+      if (!property) {
+        return res.status(404).json({ error: "Property not found" });
+      }
+      res.json(property);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error updating property:", error);
+      res.status(500).json({ error: "Failed to update property" });
+    }
+  });
+
+  app.delete("/api/properties/:id", async (req, res) => {
+    try {
+      await storage.deleteProperty(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      res.status(500).json({ error: "Failed to delete property" });
     }
   });
 

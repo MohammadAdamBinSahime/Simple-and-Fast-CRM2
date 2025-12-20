@@ -1,10 +1,40 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, decimal, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Re-export auth schema
 export * from "./models/auth";
+
+// Properties table - Malaysian Real Estate specific
+export const properties = pgTable("properties", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  address: text("address").notNull(),
+  state: text("state"),
+  city: text("city"),
+  area: text("area"),
+  propertyType: text("property_type").notNull(),
+  listingType: text("listing_type").notNull().default("sale"),
+  price: decimal("price", { precision: 15, scale: 2 }).notNull(),
+  bedrooms: integer("bedrooms"),
+  bathrooms: integer("bathrooms"),
+  squareFeet: integer("square_feet"),
+  landSize: integer("land_size"),
+  tenure: text("tenure"),
+  tenureYearsRemaining: integer("tenure_years_remaining"),
+  bumiLot: text("bumi_lot").notNull().default("no"),
+  titleType: text("title_type"),
+  maintenanceFee: decimal("maintenance_fee", { precision: 10, scale: 2 }),
+  status: text("status").notNull().default("available"),
+  description: text("description"),
+  photos: text("photos"),
+  virtualTourLink: text("virtual_tour_link"),
+  portalListingId: text("portal_listing_id"),
+  portalSource: text("portal_source"),
+  ownerId: varchar("owner_id").references(() => contacts.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 // Companies table
 export const companies = pgTable("companies", {
@@ -41,6 +71,7 @@ export const deals = pgTable("deals", {
   expectedCloseDate: timestamp("expected_close_date"),
   contactId: varchar("contact_id").references(() => contacts.id),
   companyId: varchar("company_id").references(() => companies.id),
+  propertyId: varchar("property_id").references(() => properties.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -134,6 +165,14 @@ export const scheduledEmails = pgTable("scheduled_emails", {
 });
 
 // Relations
+export const propertiesRelations = relations(properties, ({ one, many }) => ({
+  owner: one(contacts, {
+    fields: [properties.ownerId],
+    references: [contacts.id],
+  }),
+  deals: many(deals),
+}));
+
 export const companiesRelations = relations(companies, ({ many }) => ({
   contacts: many(contacts),
   deals: many(deals),
@@ -159,6 +198,10 @@ export const dealsRelations = relations(deals, ({ one, many }) => ({
   company: one(companies, {
     fields: [deals.companyId],
     references: [companies.id],
+  }),
+  property: one(properties, {
+    fields: [deals.propertyId],
+    references: [properties.id],
   }),
   notes: many(notes),
   tasks: many(tasks),
@@ -225,6 +268,11 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 }));
 
 // Insert schemas
+export const insertPropertySchema = createInsertSchema(properties).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
   createdAt: true,
@@ -280,6 +328,9 @@ export const insertScheduledEmailSchema = createInsertSchema(scheduledEmails).om
 });
 
 // Types
+export type InsertProperty = z.infer<typeof insertPropertySchema>;
+export type Property = typeof properties.$inferSelect;
+
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
 
@@ -336,3 +387,67 @@ export type DealStage = typeof dealStages[number];
 // Task priorities
 export const taskPriorities = ["low", "medium", "high"] as const;
 export type TaskPriority = typeof taskPriorities[number];
+
+// Property types (Malaysian)
+export const propertyTypes = [
+  "terrace",
+  "semi_d",
+  "bungalow",
+  "cluster",
+  "condo",
+  "apartment",
+  "service_residence",
+  "soho",
+  "sovo",
+  "shop_house",
+  "land",
+  "factory",
+  "warehouse",
+  "office",
+] as const;
+export type PropertyType = typeof propertyTypes[number];
+
+// Property listing types
+export const listingTypes = ["sale", "rent"] as const;
+export type ListingType = typeof listingTypes[number];
+
+// Property tenure types
+export const tenureTypes = ["freehold", "leasehold"] as const;
+export type TenureType = typeof tenureTypes[number];
+
+// Property title types
+export const titleTypes = ["strata", "individual"] as const;
+export type TitleType = typeof titleTypes[number];
+
+// Property statuses
+export const propertyStatuses = [
+  "available",
+  "reserved",
+  "booking",
+  "sp_signed",
+  "loan_approved",
+  "completed",
+  "withdrawn",
+] as const;
+export type PropertyStatus = typeof propertyStatuses[number];
+
+// Malaysian states
+export const malaysianStates = [
+  "Johor",
+  "Kedah",
+  "Kelantan",
+  "Melaka",
+  "Negeri Sembilan",
+  "Pahang",
+  "Perak",
+  "Perlis",
+  "Pulau Pinang",
+  "Sabah",
+  "Sarawak",
+  "Selangor",
+  "Terengganu",
+  "Kuala Lumpur",
+  "Labuan",
+  "Putrajaya",
+] as const;
+export type MalaysianState = typeof malaysianStates[number];
