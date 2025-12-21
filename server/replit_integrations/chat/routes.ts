@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { chatStorage } from "./storage";
 import { db } from "../../db";
 import { contacts, deals, tasks } from "@shared/schema";
@@ -12,10 +12,13 @@ function getUserId(req: Request): string | null {
   return user?.claims?.sub || null;
 }
 
-// Using Gemini via Replit AI Integrations (OpenAI-compatible API)
-const gemini = new OpenAI({
+// Using Gemini via Replit AI Integrations
+const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
 });
 
 // System prompt for CRM assistant
@@ -137,13 +140,13 @@ export function registerChatRoutes(app: Express): void {
 
       // Get conversation history for context
       const messages = await chatStorage.getMessagesByConversation(conversationId);
-      const chatMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-        { role: "system", content: `${CRM_SYSTEM_PROMPT}\n\n${crmContext}` },
-        ...messages.map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        })),
-      ];
+      
+      // Build Gemini-format messages with system instruction
+      const systemInstruction = `${CRM_SYSTEM_PROMPT}\n\n${crmContext}`;
+      const chatContents = messages.map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
 
       // Set up SSE
       res.setHeader("Content-Type", "text/event-stream");
@@ -151,20 +154,22 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Connection", "keep-alive");
 
       // Stream response from Gemini
-      const stream = await gemini.chat.completions.create({
+      const stream = await ai.models.generateContentStream({
         model: "gemini-2.5-flash",
-        messages: chatMessages,
-        stream: true,
-        max_tokens: 1024,
+        contents: chatContents,
+        config: {
+          systemInstruction: systemInstruction,
+          maxOutputTokens: 1024,
+        },
       });
 
       let fullResponse = "";
 
       for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          fullResponse += content;
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        const text = chunk.text || "";
+        if (text) {
+          fullResponse += text;
+          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
         }
       }
 
