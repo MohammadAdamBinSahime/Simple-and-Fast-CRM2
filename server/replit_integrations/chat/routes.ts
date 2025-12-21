@@ -176,6 +176,20 @@ export function registerChatRoutes(app: Express): void {
       // Save assistant message
       await chatStorage.createMessage(conversationId, "assistant", fullResponse);
 
+      // Generate a title for new conversations (first message)
+      if (messages.length === 1) {
+        try {
+          const titleResponse = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: `Generate a very short title (3-5 words max) for a conversation that starts with: "${content}". Only respond with the title, no quotes or punctuation.` }] }],
+          });
+          const newTitle = titleResponse.text?.trim().slice(0, 50) || "Chat";
+          await chatStorage.updateConversationTitle(conversationId, newTitle);
+        } catch (e) {
+          console.error("Error generating title:", e);
+        }
+      }
+
       res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
       res.end();
     } catch (error) {
