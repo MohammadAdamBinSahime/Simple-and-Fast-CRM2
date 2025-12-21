@@ -1,5 +1,4 @@
 import {
-  properties,
   contacts,
   companies,
   deals,
@@ -11,8 +10,6 @@ import {
   emailAccounts,
   emailTemplates,
   scheduledEmails,
-  type Property,
-  type InsertProperty,
   type Contact,
   type InsertContact,
   type Company,
@@ -46,12 +43,6 @@ function filterUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> 
 }
 
 export interface IStorage {
-  getProperties(): Promise<Property[]>;
-  getProperty(id: string): Promise<Property | undefined>;
-  createProperty(property: InsertProperty): Promise<Property>;
-  updateProperty(id: string, property: Partial<InsertProperty>): Promise<Property | undefined>;
-  deleteProperty(id: string): Promise<boolean>;
-
   getContacts(): Promise<Contact[]>;
   getContact(id: string): Promise<Contact | undefined>;
   createContact(contact: InsertContact): Promise<Contact>;
@@ -133,34 +124,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getProperties(): Promise<Property[]> {
-    return db.select().from(properties).orderBy(desc(properties.createdAt));
-  }
-
-  async getProperty(id: string): Promise<Property | undefined> {
-    const [property] = await db.select().from(properties).where(eq(properties.id, id));
-    return property || undefined;
-  }
-
-  async createProperty(property: InsertProperty): Promise<Property> {
-    const [newProperty] = await db.insert(properties).values(property).returning();
-    return newProperty;
-  }
-
-  async updateProperty(id: string, property: Partial<InsertProperty>): Promise<Property | undefined> {
-    const filtered = filterUndefined(property);
-    if (Object.keys(filtered).length === 0) {
-      return this.getProperty(id);
-    }
-    const [updated] = await db.update(properties).set(filtered).where(eq(properties.id, id)).returning();
-    return updated || undefined;
-  }
-
-  async deleteProperty(id: string): Promise<boolean> {
-    await db.delete(properties).where(eq(properties.id, id));
-    return true;
-  }
-
   async getContacts(): Promise<Contact[]> {
     return db.select().from(contacts).orderBy(desc(contacts.createdAt));
   }
