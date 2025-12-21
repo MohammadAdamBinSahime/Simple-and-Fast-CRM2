@@ -122,6 +122,13 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
 
 ## Recent Changes
 
+- December 2024: Added AI Chatbot Assistant
+  - Conversational AI assistant for CRM help
+  - Context-aware with access to contacts, deals, and tasks data
+  - Streaming responses for real-time chat experience
+  - Conversation history with multiple chat sessions
+  - Uses Replit AI Integrations (no API key needed)
+
 - December 2024: Added Google Calendar integration
   - Calendar page with monthly grid view synced to Google Calendar
   - View, create, and delete appointments directly from CRM

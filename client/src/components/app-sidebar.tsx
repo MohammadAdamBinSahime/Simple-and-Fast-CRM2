@@ -10,6 +10,7 @@ import {
   LogOut,
   Plug,
   Calendar,
+  MessageCircle,
 } from "lucide-react";
 import { SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
 import {
@@ -62,6 +63,11 @@ const mainNavItems = [
     title: "Calendar",
     url: "/calendar",
     icon: Calendar,
+  },
+  {
+    title: "AI Assistant",
+    url: "/chat",
+    icon: MessageCircle,
   },
 ];
 

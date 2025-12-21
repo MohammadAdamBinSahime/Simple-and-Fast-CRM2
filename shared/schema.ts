@@ -135,6 +135,23 @@ export const integrationAccounts = pgTable("integration_accounts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// AI Chat conversations
+export const conversations = pgTable("conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// AI Chat messages
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").references(() => conversations.id, { onDelete: "cascade" }).notNull(),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Scheduled emails
 export const scheduledEmails = pgTable("scheduled_emails", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -340,6 +357,20 @@ export type ScheduledEmail = typeof scheduledEmails.$inferSelect;
 
 export type InsertIntegrationAccount = z.infer<typeof insertIntegrationAccountSchema>;
 export type IntegrationAccount = typeof integrationAccounts.$inferSelect;
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
 
 // Integration platforms
 export const integrationPlatforms = ["whatsapp", "linkedin", "facebook"] as const;
