@@ -21,7 +21,7 @@ export default function Settings() {
 
   const deleteAccount = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/email-accounts/${id}`, { method: "DELETE" });
+      return apiRequest("DELETE", `/api/email-accounts/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/email-accounts"] });
