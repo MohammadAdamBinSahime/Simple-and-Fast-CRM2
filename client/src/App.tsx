@@ -17,7 +17,6 @@ import Deals from "@/pages/deals";
 import Tasks from "@/pages/tasks";
 import Email from "@/pages/email";
 import Settings from "@/pages/settings";
-import CalendarPage from "@/pages/calendar";
 import ChatPage from "@/pages/chat";
 import Home from "@/pages/home";
 import { Loader2 } from "lucide-react";
@@ -31,7 +30,6 @@ function Router() {
       <Route path="/deals" component={Deals} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/email" component={Email} />
-      <Route path="/calendar" component={CalendarPage} />
       <Route path="/chat" component={ChatPage} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />

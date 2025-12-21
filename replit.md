@@ -130,12 +130,6 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
   - Streaming responses for real-time chat experience
   - Conversation history with multiple chat sessions
 
-- December 2024: Added Google Calendar integration
-  - Calendar page with monthly grid view synced to Google Calendar
-  - View, create, and delete appointments directly from CRM
-  - Automatic connection detection with setup instructions
-  - Uses Replit's Google Calendar connector for OAuth
-
 - December 2024: Initial release with core CRM functionality
   - Dashboard with metrics
   - Contact, Company, Deal, Task CRUD operations

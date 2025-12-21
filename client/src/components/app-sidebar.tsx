@@ -8,7 +8,6 @@ import {
   Mail,
   Settings,
   LogOut,
-  Calendar,
   MessageCircle,
 } from "lucide-react";
 import {
@@ -56,11 +55,6 @@ const mainNavItems = [
     title: "Email",
     url: "/email",
     icon: Mail,
-  },
-  {
-    title: "Calendar",
-    url: "/calendar",
-    icon: Calendar,
   },
   {
     title: "AI Assistant",
