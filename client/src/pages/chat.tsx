@@ -2,10 +2,18 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   MessageCircle,
   Send,
@@ -14,6 +22,7 @@ import {
   Loader2,
   Bot,
   User,
+  Menu,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -45,10 +54,12 @@ interface Conversation {
 
 export default function ChatPage() {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch all conversations
@@ -189,86 +200,124 @@ export default function ChatPage() {
     }
   };
 
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversationId(id);
+    setSheetOpen(false);
+  };
+
+  const ConversationList = () => (
+    <>
+      <div className="p-4 border-b">
+        <Button
+          onClick={() => createConversationMutation.mutate()}
+          disabled={createConversationMutation.isPending}
+          className="w-full"
+          data-testid="button-new-chat"
+        >
+          {createConversationMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Plus className="h-4 w-4 mr-2" />
+          )}
+          New Chat
+        </Button>
+      </div>
+      <ScrollArea className="flex-1">
+        {conversationsLoading ? (
+          <div className="p-4 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>No chats yet</p>
+            <p className="text-xs mt-1">Start a new conversation</p>
+          </div>
+        ) : (
+          <div className="p-2 space-y-1">
+            {conversations.map((conv) => (
+              <div
+                key={conv.id}
+                className={`group flex items-center gap-2 p-2 rounded-md cursor-pointer hover-elevate ${
+                  selectedConversationId === conv.id ? "bg-accent" : ""
+                }`}
+                onClick={() => handleSelectConversation(conv.id)}
+                data-testid={`conversation-${conv.id}`}
+              >
+                <MessageCircle className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate text-sm">{conv.title}</span>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete this conversation.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteConversationMutation.mutate(conv.id)}>
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </>
+  );
+
   return (
     <div className="h-full flex">
-      {/* Conversation List */}
-      <div className="w-64 border-r flex flex-col">
-        <div className="p-4 border-b">
-          <Button
-            onClick={() => createConversationMutation.mutate()}
-            disabled={createConversationMutation.isPending}
-            className="w-full"
-            data-testid="button-new-chat"
-          >
-            {createConversationMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Plus className="h-4 w-4 mr-2" />
-            )}
-            New Chat
-          </Button>
+      {/* Desktop Conversation List */}
+      {!isMobile && (
+        <div className="w-64 border-r flex flex-col">
+          <ConversationList />
         </div>
-        <ScrollArea className="flex-1">
-          {conversationsLoading ? (
-            <div className="p-4 flex justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      )}
+
+      {/* Mobile Sheet for Conversations */}
+      {isMobile && (
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent side="left" className="w-72 p-0 flex flex-col">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle>Conversations</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <ConversationList />
             </div>
-          ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground text-sm">
-              <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No chats yet</p>
-              <p className="text-xs mt-1">Start a new conversation</p>
-            </div>
-          ) : (
-            <div className="p-2 space-y-1">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`group flex items-center gap-2 p-2 rounded-md cursor-pointer hover-elevate ${
-                    selectedConversationId === conv.id ? "bg-accent" : ""
-                  }`}
-                  onClick={() => setSelectedConversationId(conv.id)}
-                  data-testid={`conversation-${conv.id}`}
-                >
-                  <MessageCircle className="h-4 w-4 shrink-0" />
-                  <span className="flex-1 truncate text-sm">{conv.title}</span>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete this conversation.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deleteConversationMutation.mutate(conv.id)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-      </div>
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
         {selectedConversationId ? (
           <>
+            {/* Mobile Header */}
+            {isMobile && (
+              <div className="p-3 border-b flex items-center gap-3">
+                <Button variant="ghost" size="icon" onClick={() => setSheetOpen(true)} data-testid="button-open-chats">
+                  <Menu className="h-5 w-5" />
+                </Button>
+                <span className="font-medium truncate">
+                  {selectedConversation?.title || "Chat"}
+                </span>
+              </div>
+            )}
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               {messagesLoading ? (
@@ -354,15 +403,25 @@ export default function ChatPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-            <Bot className="h-16 w-16 mb-4 opacity-50" />
-            <p className="text-lg font-medium">AI Assistant</p>
-            <p className="text-sm mt-2 mb-4">Your personal CRM helper</p>
-            <Button onClick={() => createConversationMutation.mutate()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Start a conversation
-            </Button>
-          </div>
+          <>
+            {isMobile && (
+              <div className="p-3 border-b flex items-center gap-3">
+                <Button variant="ghost" size="icon" onClick={() => setSheetOpen(true)} data-testid="button-open-chats-empty">
+                  <Menu className="h-5 w-5" />
+                </Button>
+                <span className="font-medium">AI Assistant</span>
+              </div>
+            )}
+            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-4">
+              <Bot className="h-16 w-16 mb-4 opacity-50" />
+              <p className="text-lg font-medium">AI Assistant</p>
+              <p className="text-sm mt-2 mb-4 text-center">Your personal CRM helper</p>
+              <Button onClick={() => createConversationMutation.mutate()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Start a conversation
+              </Button>
+            </div>
+          </>
         )}
       </div>
     </div>
