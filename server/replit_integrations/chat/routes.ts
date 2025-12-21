@@ -12,9 +12,10 @@ function getUserId(req: Request): string | null {
   return user?.claims?.sub || null;
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+// Using Gemini via Replit AI Integrations (OpenAI-compatible API)
+const gemini = new OpenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
 });
 
 // System prompt for CRM assistant
@@ -149,9 +150,9 @@ export function registerChatRoutes(app: Express): void {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
-      // Stream response from OpenAI
-      const stream = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+      // Stream response from Gemini
+      const stream = await gemini.chat.completions.create({
+        model: "gemini-2.5-flash",
         messages: chatMessages,
         stream: true,
         max_tokens: 1024,
