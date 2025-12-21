@@ -120,6 +120,21 @@ export const emailTemplates = pgTable("email_templates", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Social integration accounts for auto-sync
+export const integrationAccounts = pgTable("integration_accounts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: text("user_id").notNull(),
+  platform: text("platform").notNull(), // whatsapp, linkedin, facebook
+  accountName: text("account_name"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  webhookSecret: text("webhook_secret"),
+  isActive: text("is_active").notNull().default("true"),
+  lastSyncAt: timestamp("last_sync_at"),
+  contactsImported: integer("contacts_imported").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Scheduled emails
 export const scheduledEmails = pgTable("scheduled_emails", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -282,6 +297,13 @@ export const insertScheduledEmailSchema = createInsertSchema(scheduledEmails).om
   createdAt: true,
 });
 
+export const insertIntegrationAccountSchema = createInsertSchema(integrationAccounts).omit({
+  id: true,
+  createdAt: true,
+  lastSyncAt: true,
+  contactsImported: true,
+});
+
 // Types
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
@@ -315,6 +337,13 @@ export type EmailTemplate = typeof emailTemplates.$inferSelect;
 
 export type InsertScheduledEmail = z.infer<typeof insertScheduledEmailSchema>;
 export type ScheduledEmail = typeof scheduledEmails.$inferSelect;
+
+export type InsertIntegrationAccount = z.infer<typeof insertIntegrationAccountSchema>;
+export type IntegrationAccount = typeof integrationAccounts.$inferSelect;
+
+// Integration platforms
+export const integrationPlatforms = ["whatsapp", "linkedin", "facebook"] as const;
+export type IntegrationPlatform = typeof integrationPlatforms[number];
 
 // Activity types
 export const activityTypes = ["call", "email", "meeting", "note", "task_completed", "deal_created", "deal_updated", "contact_created"] as const;

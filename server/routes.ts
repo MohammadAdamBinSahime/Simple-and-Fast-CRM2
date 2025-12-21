@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import crypto from "crypto";
 import { storage } from "./storage";
 import {
   insertContactSchema,
@@ -784,6 +785,196 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting scheduled email:", error);
       res.status(500).json({ error: "Failed to delete scheduled email" });
+    }
+  });
+
+  // Get webhook base URL for integrations
+  app.get("/api/integrations/webhook-base-url", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      // Use env variable if configured, otherwise derive from trusted headers
+      const configuredUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEPLOYMENT_URL;
+      
+      if (configuredUrl) {
+        return res.json({ baseUrl: configuredUrl.replace(/\/$/, '') });
+      }
+      
+      // Fallback to request headers with validation
+      const host = req.headers['host'] || '';
+      
+      // Only trust headers for Replit domains
+      const isTrustedHost = host.endsWith('.replit.app') || 
+                            host.endsWith('.replit.dev') || 
+                            host.endsWith('.repl.co') ||
+                            host.includes('localhost');
+      
+      if (!isTrustedHost) {
+        return res.json({ baseUrl: '' });
+      }
+      
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const baseUrl = `${protocol}://${host}`;
+      res.json({ baseUrl });
+    } catch (error) {
+      console.error("Error getting webhook base URL:", error);
+      res.status(500).json({ error: "Failed to get webhook base URL" });
+    }
+  });
+
+  // Integration Accounts - with Zod validation and secure field handling
+  const createIntegrationSchema = z.object({
+    platform: z.enum(["whatsapp", "linkedin", "facebook"]),
+    accountName: z.string().optional(),
+  }).strict();
+
+  const updateIntegrationSchema = z.object({
+    accountName: z.string().optional(),
+  }).strict();
+
+  app.get("/api/integrations", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const integrations = await storage.getIntegrationAccounts(req.user.id);
+      res.json(integrations);
+    } catch (error) {
+      console.error("Error fetching integrations:", error);
+      res.status(500).json({ error: "Failed to fetch integrations" });
+    }
+  });
+
+  app.post("/api/integrations", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const parsed = createIntegrationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request: " + parsed.error.message });
+      }
+      
+      const existing = await storage.getIntegrationAccountByPlatform(req.user.id, parsed.data.platform);
+      if (existing) {
+        return res.status(400).json({ error: "Integration for this platform already exists" });
+      }
+      
+      const webhookSecret = crypto.randomBytes(32).toString('hex');
+      const integration = await storage.createIntegrationAccount({
+        platform: parsed.data.platform,
+        accountName: parsed.data.accountName || null,
+        userId: req.user.id,
+        webhookSecret,
+        isActive: "true",
+      });
+      res.json(integration);
+    } catch (error) {
+      console.error("Error creating integration:", error);
+      res.status(500).json({ error: "Failed to create integration" });
+    }
+  });
+
+  app.patch("/api/integrations/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      
+      const parsed = updateIntegrationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid request: " + parsed.error.message });
+      }
+      
+      const existing = await storage.getIntegrationAccount(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      
+      const integration = await storage.updateIntegrationAccount(req.params.id, parsed.data);
+      res.json(integration);
+    } catch (error) {
+      console.error("Error updating integration:", error);
+      res.status(500).json({ error: "Failed to update integration" });
+    }
+  });
+
+  app.delete("/api/integrations/:id", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const integration = await storage.getIntegrationAccount(req.params.id);
+      if (!integration) {
+        return res.status(404).json({ error: "Integration not found" });
+      }
+      if (integration.userId !== req.user.id) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+      await storage.deleteIntegrationAccount(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting integration:", error);
+      res.status(500).json({ error: "Failed to delete integration" });
+    }
+  });
+
+  // Webhook endpoint for receiving contacts from integrations (e.g., Zapier, Make)
+  app.post("/api/webhook/contacts/:platform", async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const { webhookSecret } = req.query;
+      
+      if (!webhookSecret || typeof webhookSecret !== 'string') {
+        return res.status(401).json({ error: "Missing webhook secret" });
+      }
+
+      // Find the integration by webhook secret
+      const integration = await storage.getIntegrationAccountByWebhookSecret(platform, webhookSecret);
+
+      if (!integration) {
+        return res.status(401).json({ error: "Invalid webhook secret" });
+      }
+
+      // Process incoming contacts
+      const contacts = Array.isArray(req.body) ? req.body : [req.body];
+      let importedCount = 0;
+
+      for (const contactData of contacts) {
+        try {
+          await storage.createContact({
+            userId: integration.userId,
+            firstName: contactData.firstName || contactData.first_name || contactData.name?.split(' ')[0] || 'Unknown',
+            lastName: contactData.lastName || contactData.last_name || contactData.name?.split(' ').slice(1).join(' ') || '',
+            email: contactData.email || null,
+            phone: contactData.phone || contactData.phoneNumber || contactData.whatsapp || null,
+            status: 'lead',
+            linkedinUrl: contactData.linkedinUrl || contactData.linkedin || null,
+            facebookUrl: contactData.facebookUrl || contactData.facebook || null,
+            whatsappNumber: contactData.whatsappNumber || contactData.whatsapp || contactData.phone || null,
+          });
+          importedCount++;
+        } catch (e) {
+          console.error("Error importing contact:", e);
+        }
+      }
+
+      // Update integration stats
+      await storage.updateIntegrationAccount(integration.id, {
+        lastSyncAt: new Date(),
+        contactsImported: (integration.contactsImported || 0) + importedCount,
+      });
+
+      res.json({ success: true, imported: importedCount });
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      res.status(500).json({ error: "Failed to process webhook" });
     }
   });
 

@@ -10,6 +10,7 @@ import {
   emailAccounts,
   emailTemplates,
   scheduledEmails,
+  integrationAccounts,
   type Contact,
   type InsertContact,
   type Company,
@@ -32,6 +33,8 @@ import {
   type InsertEmailTemplate,
   type ScheduledEmail,
   type InsertScheduledEmail,
+  type IntegrationAccount,
+  type InsertIntegrationAccount,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -121,6 +124,14 @@ export interface IStorage {
   createScheduledEmail(email: InsertScheduledEmail): Promise<ScheduledEmail>;
   updateScheduledEmail(id: string, email: Partial<InsertScheduledEmail>): Promise<ScheduledEmail | undefined>;
   deleteScheduledEmail(id: string): Promise<boolean>;
+
+  getIntegrationAccounts(userId: string): Promise<IntegrationAccount[]>;
+  getIntegrationAccount(id: string): Promise<IntegrationAccount | undefined>;
+  getIntegrationAccountByPlatform(userId: string, platform: string): Promise<IntegrationAccount | undefined>;
+  getIntegrationAccountByWebhookSecret(platform: string, webhookSecret: string): Promise<IntegrationAccount | undefined>;
+  createIntegrationAccount(account: InsertIntegrationAccount): Promise<IntegrationAccount>;
+  updateIntegrationAccount(id: string, account: Partial<InsertIntegrationAccount & { lastSyncAt?: Date; contactsImported?: number }>): Promise<IntegrationAccount | undefined>;
+  deleteIntegrationAccount(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -466,6 +477,46 @@ export class DatabaseStorage implements IStorage {
 
   async deleteScheduledEmail(id: string): Promise<boolean> {
     await db.delete(scheduledEmails).where(eq(scheduledEmails.id, id));
+    return true;
+  }
+
+  async getIntegrationAccounts(userId: string): Promise<IntegrationAccount[]> {
+    return db.select().from(integrationAccounts).where(eq(integrationAccounts.userId, userId)).orderBy(desc(integrationAccounts.createdAt));
+  }
+
+  async getIntegrationAccount(id: string): Promise<IntegrationAccount | undefined> {
+    const [account] = await db.select().from(integrationAccounts).where(eq(integrationAccounts.id, id));
+    return account || undefined;
+  }
+
+  async getIntegrationAccountByPlatform(userId: string, platform: string): Promise<IntegrationAccount | undefined> {
+    const [account] = await db.select().from(integrationAccounts)
+      .where(and(eq(integrationAccounts.userId, userId), eq(integrationAccounts.platform, platform)));
+    return account || undefined;
+  }
+
+  async getIntegrationAccountByWebhookSecret(platform: string, webhookSecret: string): Promise<IntegrationAccount | undefined> {
+    const [account] = await db.select().from(integrationAccounts)
+      .where(and(eq(integrationAccounts.platform, platform), eq(integrationAccounts.webhookSecret, webhookSecret)));
+    return account || undefined;
+  }
+
+  async createIntegrationAccount(account: InsertIntegrationAccount): Promise<IntegrationAccount> {
+    const [newAccount] = await db.insert(integrationAccounts).values(account).returning();
+    return newAccount;
+  }
+
+  async updateIntegrationAccount(id: string, account: Partial<InsertIntegrationAccount & { lastSyncAt?: Date; contactsImported?: number }>): Promise<IntegrationAccount | undefined> {
+    const filtered = filterUndefined(account);
+    if (Object.keys(filtered).length === 0) {
+      return this.getIntegrationAccount(id);
+    }
+    const [updated] = await db.update(integrationAccounts).set(filtered).where(eq(integrationAccounts.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteIntegrationAccount(id: string): Promise<boolean> {
+    await db.delete(integrationAccounts).where(eq(integrationAccounts.id, id));
     return true;
   }
 }
