@@ -8,7 +8,9 @@ import {
   Mail,
   Settings,
   LogOut,
+  Plug,
 } from "lucide-react";
+import { SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
 import {
   Sidebar,
   SidebarContent,
@@ -57,6 +59,27 @@ const mainNavItems = [
   },
 ];
 
+const integrationsNavItems = [
+  {
+    title: "WhatsApp",
+    url: "/integrations/whatsapp",
+    icon: SiWhatsapp,
+    color: "text-green-500",
+  },
+  {
+    title: "LinkedIn",
+    url: "/integrations/linkedin",
+    icon: SiLinkedin,
+    color: "text-blue-600",
+  },
+  {
+    title: "Facebook",
+    url: "/integrations/facebook",
+    icon: SiFacebook,
+    color: "text-blue-500",
+  },
+];
+
 const settingsNavItems = [
   {
     title: "Settings",
@@ -95,6 +118,28 @@ export function AppSidebar() {
                   >
                     <Link href={item.url} data-testid={`nav-link-${item.title.toLowerCase()}`}>
                       <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Integrations
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {integrationsNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                  >
+                    <Link href={item.url} data-testid={`nav-link-${item.title.toLowerCase()}`}>
+                      <item.icon className={`h-4 w-4 ${item.color}`} />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
