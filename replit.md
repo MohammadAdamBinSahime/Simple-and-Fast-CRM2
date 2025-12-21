@@ -122,6 +122,12 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
 
 ## Recent Changes
 
+- December 2024: Added Google Calendar integration
+  - Calendar page with monthly grid view synced to Google Calendar
+  - View, create, and delete appointments directly from CRM
+  - Automatic connection detection with setup instructions
+  - Uses Replit's Google Calendar connector for OAuth
+
 - December 2024: Added social media integrations
   - WhatsApp, LinkedIn, Facebook integration pages
   - Automatic sync via webhook endpoints

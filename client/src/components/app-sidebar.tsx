@@ -9,8 +9,9 @@ import {
   Settings,
   LogOut,
   Plug,
+  Calendar,
 } from "lucide-react";
-import { SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
+import { SiFacebook, SiLinkedin, SiWhatsapp, SiGooglecalendar } from "react-icons/si";
 import {
   Sidebar,
   SidebarContent,
@@ -56,6 +57,15 @@ const mainNavItems = [
     title: "Email",
     url: "/email",
     icon: Mail,
+  },
+];
+
+const calendarNavItems = [
+  {
+    title: "Calendar",
+    url: "/calendar",
+    icon: SiGooglecalendar,
+    color: "text-blue-500",
   },
 ];
 
@@ -118,6 +128,28 @@ export function AppSidebar() {
                   >
                     <Link href={item.url} data-testid={`nav-link-${item.title.toLowerCase()}`}>
                       <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Calendar
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {calendarNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                  >
+                    <Link href={item.url} data-testid={`nav-link-${item.title.toLowerCase()}`}>
+                      <item.icon className={`h-4 w-4 ${item.color}`} />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>

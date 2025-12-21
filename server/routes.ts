@@ -925,6 +925,91 @@ export async function registerRoutes(
     }
   });
 
+  // Google Calendar API endpoints
+  app.get("/api/calendar/status", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const { isGoogleCalendarConnected } = await import("./googleCalendar");
+      const connected = await isGoogleCalendarConnected();
+      res.json({ connected });
+    } catch (error) {
+      console.error("Error checking calendar status:", error);
+      res.json({ connected: false });
+    }
+  });
+
+  app.get("/api/calendar/events", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const { listCalendarEvents } = await import("./googleCalendar");
+      
+      const timeMin = req.query.timeMin ? new Date(req.query.timeMin as string) : undefined;
+      const timeMax = req.query.timeMax ? new Date(req.query.timeMax as string) : undefined;
+      
+      const events = await listCalendarEvents(timeMin, timeMax);
+      res.json(events);
+    } catch (error: any) {
+      console.error("Error fetching calendar events:", error);
+      if (error.message?.includes("not connected")) {
+        return res.status(400).json({ error: "Google Calendar not connected" });
+      }
+      res.status(500).json({ error: "Failed to fetch calendar events" });
+    }
+  });
+
+  app.post("/api/calendar/events", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const { createCalendarEvent } = await import("./googleCalendar");
+      
+      const eventSchema = z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        start: z.string(),
+        end: z.string(),
+        allDay: z.boolean().optional(),
+        location: z.string().optional(),
+      });
+      
+      const parsed = eventSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid event data" });
+      }
+      
+      const event = await createCalendarEvent(parsed.data);
+      res.json(event);
+    } catch (error: any) {
+      console.error("Error creating calendar event:", error);
+      if (error.message?.includes("not connected")) {
+        return res.status(400).json({ error: "Google Calendar not connected" });
+      }
+      res.status(500).json({ error: "Failed to create calendar event" });
+    }
+  });
+
+  app.delete("/api/calendar/events/:eventId", async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const { deleteCalendarEvent } = await import("./googleCalendar");
+      await deleteCalendarEvent(req.params.eventId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting calendar event:", error);
+      if (error.message?.includes("not connected")) {
+        return res.status(400).json({ error: "Google Calendar not connected" });
+      }
+      res.status(500).json({ error: "Failed to delete calendar event" });
+    }
+  });
+
   // Webhook endpoint for receiving contacts from integrations (e.g., Zapier, Make)
   app.post("/api/webhook/contacts/:platform", async (req, res) => {
     try {
