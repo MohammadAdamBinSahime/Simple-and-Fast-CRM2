@@ -128,6 +128,11 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
 
 ## Recent Changes
 
+- December 2024: Switched AI Chatbot to Gemini
+  - Now uses gemini-2.5-flash model via Replit AI Integrations
+  - No API key needed - charges billed to Replit credits
+  - Fixed session cookie settings for production compatibility
+
 - December 2024: Fixed AI Chatbot authentication
   - Chat routes now correctly extract user ID from session claims
   - Added isAuthenticated middleware for proper route protection
@@ -137,7 +142,6 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
   - Context-aware with access to contacts, deals, and tasks data
   - Streaming responses for real-time chat experience
   - Conversation history with multiple chat sessions
-  - Uses Replit AI Integrations (no API key needed)
 
 - December 2024: Added Google Calendar integration
   - Calendar page with monthly grid view synced to Google Calendar
