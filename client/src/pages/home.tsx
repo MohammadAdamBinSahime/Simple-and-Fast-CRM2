@@ -90,9 +90,6 @@ export default function Home() {
             >
               Start Free
             </Button>
-            <Button variant="outline" size="lg" data-testid="button-learn-more">
-              Learn More
-            </Button>
           </div>
         </div>
       </section>
