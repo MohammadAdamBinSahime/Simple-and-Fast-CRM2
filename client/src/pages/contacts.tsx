@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/form";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload, Tags } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload, Tags, MessageCircle } from "lucide-react";
+import { SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -152,6 +153,9 @@ export default function Contacts() {
       jobTitle: "",
       companyId: null,
       status: "lead",
+      linkedinUrl: "",
+      facebookUrl: "",
+      whatsappNumber: "",
     },
   });
 
@@ -173,6 +177,9 @@ export default function Contacts() {
         jobTitle: editingContact.jobTitle || "",
         companyId: editingContact.companyId,
         status: editingContact.status,
+        linkedinUrl: editingContact.linkedinUrl || "",
+        facebookUrl: editingContact.facebookUrl || "",
+        whatsappNumber: editingContact.whatsappNumber || "",
       });
     } else {
       form.reset({
@@ -183,6 +190,9 @@ export default function Contacts() {
         jobTitle: "",
         companyId: null,
         status: "lead",
+        linkedinUrl: "",
+        facebookUrl: "",
+        whatsappNumber: "",
       });
     }
   }, [editingContact, form]);
@@ -310,6 +320,64 @@ export default function Contacts() {
       key: "status",
       header: "Status",
       cell: (row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: "social",
+      header: "Connect",
+      cell: (row) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!row.whatsappNumber && !row.phone}
+            onClick={(e) => {
+              e.stopPropagation();
+              const number = row.whatsappNumber || row.phone;
+              if (number) {
+                window.open(`https://wa.me/${number.replace(/\D/g, '')}`, '_blank');
+              }
+            }}
+            data-testid={`button-whatsapp-${row.id}`}
+            title="Message on WhatsApp"
+          >
+            <SiWhatsapp className="h-4 w-4 text-green-500" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!row.linkedinUrl}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (row.linkedinUrl) {
+                window.open(row.linkedinUrl, '_blank');
+              }
+            }}
+            data-testid={`button-linkedin-${row.id}`}
+            title="View LinkedIn profile"
+          >
+            <SiLinkedin className="h-4 w-4 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!row.facebookUrl}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (row.facebookUrl) {
+                window.open(row.facebookUrl, '_blank');
+              }
+            }}
+            data-testid={`button-facebook-${row.id}`}
+            title="View Facebook profile"
+          >
+            <SiFacebook className="h-4 w-4 text-blue-500" />
+          </Button>
+        </div>
+      ),
+      className: "w-28",
     },
     {
       key: "actions",
@@ -560,6 +628,77 @@ export default function Contacts() {
                   </FormItem>
                 )}
               />
+              <div className="border-t pt-4 mt-4">
+                <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  Social Links
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="whatsappNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <SiWhatsapp className="h-3 w-3 text-green-500" />
+                          WhatsApp
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ""} 
+                            placeholder="+1234567890"
+                            data-testid="input-whatsapp" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="linkedinUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <SiLinkedin className="h-3 w-3 text-blue-600" />
+                          LinkedIn
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ""} 
+                            placeholder="https://linkedin.com/in/..."
+                            data-testid="input-linkedin" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="facebookUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <SiFacebook className="h-3 w-3 text-blue-500" />
+                          Facebook
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ""} 
+                            placeholder="https://facebook.com/..."
+                            data-testid="input-facebook" 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleCloseDialog}>
                   Cancel

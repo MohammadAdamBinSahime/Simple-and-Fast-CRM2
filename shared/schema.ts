@@ -28,6 +28,9 @@ export const contacts = pgTable("contacts", {
   jobTitle: text("job_title"),
   companyId: varchar("company_id").references(() => companies.id),
   status: text("status").notNull().default("lead"),
+  linkedinUrl: text("linkedin_url"),
+  facebookUrl: text("facebook_url"),
+  whatsappNumber: text("whatsapp_number"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
