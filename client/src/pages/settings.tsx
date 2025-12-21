@@ -3,8 +3,8 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Monitor, Mail, Trash2, Loader2 } from "lucide-react";
-import { SiGmail } from "react-icons/si";
+import { Moon, Sun, Monitor, Mail, Trash2, Loader2, ExternalLink } from "lucide-react";
+import { SiGmail, SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -158,6 +158,48 @@ export default function Settings() {
               </div>
               <p className="text-xs text-muted-foreground mt-3">
                 Email integration requires setup. Contact your administrator to enable Gmail or Outlook connections.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-medium">Social Integrations</CardTitle>
+            <CardDescription>
+              Quick actions to connect with contacts via social platforms
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Social integration buttons are available on each contact card. You can add LinkedIn, Facebook, and WhatsApp links when creating or editing contacts.
+            </p>
+            <div className="grid grid-cols-3 gap-4 pt-2">
+              <div className="flex items-center gap-3 p-3 rounded-md border">
+                <SiWhatsapp className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-sm font-medium">WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">Direct messaging</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-md border">
+                <SiLinkedin className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium">LinkedIn</p>
+                  <p className="text-xs text-muted-foreground">Profile links</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-md border">
+                <SiFacebook className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-sm font-medium">Facebook</p>
+                  <p className="text-xs text-muted-foreground">Profile links</p>
+                </div>
+              </div>
+            </div>
+            <div className="pt-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                To use social integrations, add the contact's social media links in the contact form. Click the social icons on contact rows to open their profiles directly.
               </p>
             </div>
           </CardContent>
