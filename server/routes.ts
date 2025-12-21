@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
@@ -15,6 +15,12 @@ import {
   insertScheduledEmailSchema,
 } from "@shared/schema";
 import { z } from "zod";
+
+// Helper to extract user ID from session claims
+function getUserId(req: Request): string | null {
+  const user = req.user as any;
+  return user?.claims?.sub || null;
+}
 
 const updateContactSchema = z.object({
   firstName: z.string().optional(),
@@ -535,7 +541,7 @@ export async function registerRoutes(
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const accounts = await storage.getEmailAccounts(req.user.id);
+      const accounts = await storage.getEmailAccounts(getUserId(req)!);
       res.json(accounts.map(sanitizeEmailAccount));
     } catch (error) {
       console.error("Error fetching email accounts:", error);
@@ -552,7 +558,7 @@ export async function registerRoutes(
       if (!account) {
         return res.status(404).json({ error: "Email account not found" });
       }
-      if (account.userId !== req.user.id) {
+      if (account.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       res.json(sanitizeEmailAccount(account));
@@ -569,7 +575,7 @@ export async function registerRoutes(
       }
       const data = insertEmailAccountSchema.parse({
         ...req.body,
-        userId: req.user.id,
+        userId: getUserId(req)!,
       });
       const account = await storage.createEmailAccount(data);
       res.status(201).json(sanitizeEmailAccount(account));
@@ -591,7 +597,7 @@ export async function registerRoutes(
       if (!account) {
         return res.status(404).json({ error: "Email account not found" });
       }
-      if (account.userId !== req.user.id) {
+      if (account.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       await storage.deleteEmailAccount(req.params.id);
@@ -608,7 +614,7 @@ export async function registerRoutes(
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const templates = await storage.getEmailTemplates(req.user.id);
+      const templates = await storage.getEmailTemplates(getUserId(req)!);
       res.json(templates);
     } catch (error) {
       console.error("Error fetching email templates:", error);
@@ -625,7 +631,7 @@ export async function registerRoutes(
       if (!template) {
         return res.status(404).json({ error: "Email template not found" });
       }
-      if (template.userId !== req.user.id) {
+      if (template.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       res.json(template);
@@ -642,7 +648,7 @@ export async function registerRoutes(
       }
       const data = insertEmailTemplateSchema.parse({
         ...req.body,
-        userId: req.user.id,
+        userId: getUserId(req)!,
       });
       const template = await storage.createEmailTemplate(data);
       res.status(201).json(template);
@@ -664,7 +670,7 @@ export async function registerRoutes(
       if (!existing) {
         return res.status(404).json({ error: "Email template not found" });
       }
-      if (existing.userId !== req.user.id) {
+      if (existing.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       const template = await storage.updateEmailTemplate(req.params.id, req.body);
@@ -684,7 +690,7 @@ export async function registerRoutes(
       if (!template) {
         return res.status(404).json({ error: "Email template not found" });
       }
-      if (template.userId !== req.user.id) {
+      if (template.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       await storage.deleteEmailTemplate(req.params.id);
@@ -701,7 +707,7 @@ export async function registerRoutes(
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const emails = await storage.getScheduledEmails(req.user.id);
+      const emails = await storage.getScheduledEmails(getUserId(req)!);
       res.json(emails);
     } catch (error) {
       console.error("Error fetching scheduled emails:", error);
@@ -718,7 +724,7 @@ export async function registerRoutes(
       if (!email) {
         return res.status(404).json({ error: "Scheduled email not found" });
       }
-      if (email.userId !== req.user.id) {
+      if (email.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       res.json(email);
@@ -735,7 +741,7 @@ export async function registerRoutes(
       }
       const data = insertScheduledEmailSchema.parse({
         ...req.body,
-        userId: req.user.id,
+        userId: getUserId(req)!,
       });
       const email = await storage.createScheduledEmail(data);
       res.status(201).json(email);
@@ -757,7 +763,7 @@ export async function registerRoutes(
       if (!existing) {
         return res.status(404).json({ error: "Scheduled email not found" });
       }
-      if (existing.userId !== req.user.id) {
+      if (existing.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       const email = await storage.updateScheduledEmail(req.params.id, req.body);
@@ -777,7 +783,7 @@ export async function registerRoutes(
       if (!email) {
         return res.status(404).json({ error: "Scheduled email not found" });
       }
-      if (email.userId !== req.user.id) {
+      if (email.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       await storage.deleteScheduledEmail(req.params.id);
@@ -839,7 +845,7 @@ export async function registerRoutes(
       if (!req.user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const integrations = await storage.getIntegrationAccounts(req.user.id);
+      const integrations = await storage.getIntegrationAccounts(getUserId(req)!);
       res.json(integrations);
     } catch (error) {
       console.error("Error fetching integrations:", error);
@@ -858,7 +864,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid request: " + parsed.error.message });
       }
       
-      const existing = await storage.getIntegrationAccountByPlatform(req.user.id, parsed.data.platform);
+      const existing = await storage.getIntegrationAccountByPlatform(getUserId(req)!, parsed.data.platform);
       if (existing) {
         return res.status(400).json({ error: "Integration for this platform already exists" });
       }
@@ -867,7 +873,7 @@ export async function registerRoutes(
       const integration = await storage.createIntegrationAccount({
         platform: parsed.data.platform,
         accountName: parsed.data.accountName || null,
-        userId: req.user.id,
+        userId: getUserId(req)!,
         webhookSecret,
         isActive: "true",
       });
@@ -893,7 +899,7 @@ export async function registerRoutes(
       if (!existing) {
         return res.status(404).json({ error: "Integration not found" });
       }
-      if (existing.userId !== req.user.id) {
+      if (existing.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       
@@ -914,7 +920,7 @@ export async function registerRoutes(
       if (!integration) {
         return res.status(404).json({ error: "Integration not found" });
       }
-      if (integration.userId !== req.user.id) {
+      if (integration.userId !== getUserId(req)!) {
         return res.status(403).json({ error: "Forbidden" });
       }
       await storage.deleteIntegrationAccount(req.params.id);
@@ -1034,10 +1040,9 @@ export async function registerRoutes(
       for (const contactData of contacts) {
         try {
           await storage.createContact({
-            userId: integration.userId,
             firstName: contactData.firstName || contactData.first_name || contactData.name?.split(' ')[0] || 'Unknown',
             lastName: contactData.lastName || contactData.last_name || contactData.name?.split(' ').slice(1).join(' ') || '',
-            email: contactData.email || null,
+            email: contactData.email || `imported-${Date.now()}@placeholder.local`,
             phone: contactData.phone || contactData.phoneNumber || contactData.whatsapp || null,
             status: 'lead',
             linkedinUrl: contactData.linkedinUrl || contactData.linkedin || null,
