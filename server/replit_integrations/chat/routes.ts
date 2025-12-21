@@ -4,12 +4,12 @@ import { chatStorage } from "./storage";
 import { db } from "../../db";
 import { contacts, deals, tasks } from "@shared/schema";
 import { desc } from "drizzle-orm";
+import { isAuthenticated } from "../auth";
 
-interface AuthUser {
-  id: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
+// Get user ID from session claims
+function getUserId(req: Request): string | null {
+  const user = req.user as any;
+  return user?.claims?.sub || null;
 }
 
 const openai = new OpenAI({
@@ -30,13 +30,13 @@ Keep your responses concise, professional, and helpful. Use simple language suit
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations for the current user
-  app.get("/api/conversations", async (req: Request, res: Response) => {
+  app.get("/api/conversations", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user as AuthUser | undefined;
-      if (!user || !user.id) {
+      const userId = getUserId(req);
+      if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
-      const conversations = await chatStorage.getAllConversations(user.id);
+      const conversations = await chatStorage.getAllConversations(userId);
       res.json(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -45,10 +45,10 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Get single conversation with messages
-  app.get("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.get("/api/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user as AuthUser | undefined;
-      if (!user || !user.id) {
+      const userId = getUserId(req);
+      if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const id = req.params.id;
@@ -56,7 +56,7 @@ export function registerChatRoutes(app: Express): void {
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
       }
-      if (conversation.userId !== user.id) {
+      if (conversation.userId !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
       const messages = await chatStorage.getMessagesByConversation(id);
@@ -68,14 +68,14 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Create new conversation
-  app.post("/api/conversations", async (req: Request, res: Response) => {
+  app.post("/api/conversations", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user as AuthUser | undefined;
-      if (!user || !user.id) {
+      const userId = getUserId(req);
+      if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const { title } = req.body;
-      const conversation = await chatStorage.createConversation(user.id, title || "New Chat");
+      const conversation = await chatStorage.createConversation(userId, title || "New Chat");
       res.status(201).json(conversation);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -84,15 +84,15 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Delete conversation
-  app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.delete("/api/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user as AuthUser | undefined;
-      if (!user || !user.id) {
+      const userId = getUserId(req);
+      if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const id = req.params.id;
       const conversation = await chatStorage.getConversation(id);
-      if (conversation && conversation.userId !== user.id) {
+      if (conversation && conversation.userId !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
       await chatStorage.deleteConversation(id);
@@ -104,16 +104,16 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Send message and get AI response (streaming)
-  app.post("/api/conversations/:id/messages", async (req: Request, res: Response) => {
+  app.post("/api/conversations/:id/messages", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const user = req.user as AuthUser | undefined;
-      if (!user || !user.id) {
+      const userId = getUserId(req);
+      if (!userId) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const conversationId = req.params.id;
       const conversation = await chatStorage.getConversation(conversationId);
       
-      if (!conversation || conversation.userId !== user.id) {
+      if (!conversation || conversation.userId !== userId) {
         return res.status(403).json({ error: "Forbidden" });
       }
 

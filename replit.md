@@ -120,7 +120,17 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
 - **tasks**: Tasks with priority, due date, and association to other records
 - **integration_accounts**: Social integration connections with webhook secrets for auto-sync
 
+## Planned Features (Deferred)
+
+- **Billing Management**: Stripe integration for subscription and payment management
+  - User dismissed Stripe connector setup - can add later if needed
+  - When ready: Use Replit's Stripe connector for secure OAuth integration
+
 ## Recent Changes
+
+- December 2024: Fixed AI Chatbot authentication
+  - Chat routes now correctly extract user ID from session claims
+  - Added isAuthenticated middleware for proper route protection
 
 - December 2024: Added AI Chatbot Assistant
   - Conversational AI assistant for CRM help
