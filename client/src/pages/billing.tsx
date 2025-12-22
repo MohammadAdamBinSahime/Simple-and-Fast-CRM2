@@ -5,8 +5,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CreditCard, Check, ExternalLink } from "lucide-react";
+import { Loader2, CreditCard, Check, ExternalLink, Clock, Gift } from "lucide-react";
 import { useLocation } from "wouter";
+
+interface TrialStatus {
+  isTrialActive: boolean;
+  daysLeft: number;
+  trialEndDate: string;
+  hasSubscription: boolean;
+}
 
 interface Price {
   id: string;
@@ -47,9 +54,14 @@ export default function BillingPage() {
     queryKey: ["/api/billing/subscription"],
   });
 
+  const { data: trialData, isLoading: trialLoading } = useQuery<TrialStatus>({
+    queryKey: ["/api/billing/trial"],
+  });
+
   useEffect(() => {
     if (success || canceled) {
       queryClient.invalidateQueries({ queryKey: ["/api/billing/subscription"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/trial"] });
     }
   }, [success, canceled]);
 
@@ -115,7 +127,8 @@ export default function BillingPage() {
 
   const products = productsData?.data || [];
   const subscription = subscriptionData?.subscription;
-  const isLoading = productsLoading || subscriptionLoading;
+  const trial = trialData;
+  const isLoading = productsLoading || subscriptionLoading || trialLoading;
 
   if (isLoading) {
     return (
@@ -154,6 +167,49 @@ export default function BillingPage() {
               <div>
                 <p className="font-medium text-yellow-800 dark:text-yellow-200">Payment canceled</p>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300">You can try again when you're ready.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {trial?.isTrialActive && (
+        <Card className="border-primary/50 bg-primary/5" data-testid="card-trial-status">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Free Trial Active
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium" data-testid="text-trial-days-left">
+                  {trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"} left
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Your 7-day free trial ends on {new Date(trial.trialEndDate).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Enjoy full access to all features during your trial. Subscribe anytime to continue after your trial ends.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {trial && !trial.isTrialActive && !trial.hasSubscription && (
+        <Card className="border-destructive/50 bg-destructive/5" data-testid="card-trial-expired">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-destructive" />
+              <div>
+                <p className="font-medium text-destructive">Trial Expired</p>
+                <p className="text-sm text-muted-foreground">
+                  Your free trial has ended. Subscribe now to continue using all features.
+                </p>
               </div>
             </div>
           </CardContent>

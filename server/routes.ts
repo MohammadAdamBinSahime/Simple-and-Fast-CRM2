@@ -1140,6 +1140,38 @@ export async function registerRoutes(
     }
   });
 
+  // Get trial status (requires auth)
+  app.get("/api/billing/trial", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const TRIAL_DAYS = 7;
+      const now = new Date();
+      const createdAt = user.createdAt ? new Date(user.createdAt) : now;
+      const trialEndDate = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+      const daysLeft = Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+      const isTrialActive = daysLeft > 0 && !user.stripeSubscriptionId;
+
+      res.json({
+        isTrialActive,
+        daysLeft,
+        trialEndDate: trialEndDate.toISOString(),
+        hasSubscription: !!user.stripeSubscriptionId,
+      });
+    } catch (error) {
+      console.error("Error fetching trial status:", error);
+      res.status(500).json({ error: "Failed to fetch trial status" });
+    }
+  });
+
   // Create checkout session (requires auth)
   app.post("/api/billing/checkout", isAuthenticated, async (req, res) => {
     try {
