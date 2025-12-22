@@ -107,11 +107,24 @@ This CRM application helps you manage your contacts, companies, deals, and tasks
 - **notes**: Notes linked to contacts, companies, or deals
 - **tasks**: Tasks with priority, due date, and association to other records
 
-## Planned Features (Deferred)
+## Billing & Payments
 
-- **Billing Management**: Stripe integration for subscription and payment management
-  - User dismissed Stripe connector setup - can add later if needed
-  - When ready: Use Replit's Stripe connector for secure OAuth integration
+Stripe integration is now active for subscription management:
+- **Billing page**: View available plans and manage subscription
+- **Checkout**: Secure Stripe Checkout for payment processing
+- **Customer Portal**: Manage billing, update payment methods, cancel subscription
+- **Webhooks**: Automatic sync of subscription status via Stripe webhooks
+
+### Billing API Endpoints
+- `GET /api/billing/config` - Get Stripe publishable key
+- `GET /api/billing/products` - List subscription plans
+- `GET /api/billing/subscription` - Get current subscription status
+- `POST /api/billing/checkout` - Create checkout session
+- `POST /api/billing/portal` - Create customer portal session
+
+### Creating Products
+Run `npx tsx scripts/seed-products.ts` to create subscription products in Stripe.
+Products are automatically synced to the database via webhooks.
 
 ## Recent Changes
 

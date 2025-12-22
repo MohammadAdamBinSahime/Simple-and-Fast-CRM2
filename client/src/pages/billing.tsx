@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,12 @@ export default function BillingPage() {
   const { data: subscriptionData, isLoading: subscriptionLoading } = useQuery<{ subscription: Subscription | null }>({
     queryKey: ["/api/billing/subscription"],
   });
+
+  useEffect(() => {
+    if (success || canceled) {
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/subscription"] });
+    }
+  }, [success, canceled]);
 
   const checkoutMutation = useMutation({
     mutationFn: async (priceId: string) => {

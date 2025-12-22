@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey } from "./stripeClient";
+import { isAuthenticated } from "./replit_integrations/auth";
 import {
   insertContactSchema,
   insertCompanySchema,
@@ -1072,8 +1073,8 @@ export async function registerRoutes(
 
   // ============== BILLING ROUTES ==============
 
-  // Get Stripe publishable key
-  app.get("/api/billing/config", async (req, res) => {
+  // Get Stripe publishable key (requires auth)
+  app.get("/api/billing/config", isAuthenticated, async (req, res) => {
     try {
       const publishableKey = await getStripePublishableKey();
       res.json({ publishableKey });
@@ -1083,8 +1084,8 @@ export async function registerRoutes(
     }
   });
 
-  // Get products with prices
-  app.get("/api/billing/products", async (req, res) => {
+  // Get products with prices (requires auth)
+  app.get("/api/billing/products", isAuthenticated, async (req, res) => {
     try {
       const rows = await stripeService.listProductsWithPrices();
       
@@ -1118,8 +1119,8 @@ export async function registerRoutes(
     }
   });
 
-  // Get user subscription status
-  app.get("/api/billing/subscription", async (req, res) => {
+  // Get user subscription status (requires auth)
+  app.get("/api/billing/subscription", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
@@ -1139,8 +1140,8 @@ export async function registerRoutes(
     }
   });
 
-  // Create checkout session
-  app.post("/api/billing/checkout", async (req, res) => {
+  // Create checkout session (requires auth)
+  app.post("/api/billing/checkout", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
@@ -1183,8 +1184,8 @@ export async function registerRoutes(
     }
   });
 
-  // Create customer portal session
-  app.post("/api/billing/portal", async (req, res) => {
+  // Create customer portal session (requires auth)
+  app.post("/api/billing/portal", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
