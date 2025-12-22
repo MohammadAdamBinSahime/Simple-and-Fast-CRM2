@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   MessageCircle,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -65,6 +66,11 @@ const mainNavItems = [
 
 
 const settingsNavItems = [
+  {
+    title: "Billing",
+    url: "/billing",
+    icon: CreditCard,
+  },
   {
     title: "Settings",
     url: "/settings",

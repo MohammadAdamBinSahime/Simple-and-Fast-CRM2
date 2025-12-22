@@ -18,6 +18,7 @@ import Tasks from "@/pages/tasks";
 import Email from "@/pages/email";
 import Settings from "@/pages/settings";
 import ChatPage from "@/pages/chat";
+import BillingPage from "@/pages/billing";
 import Home from "@/pages/home";
 import { Loader2 } from "lucide-react";
 
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/tasks" component={Tasks} />
       <Route path="/email" component={Email} />
       <Route path="/chat" component={ChatPage} />
+      <Route path="/billing" component={BillingPage} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
