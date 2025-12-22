@@ -163,6 +163,8 @@ export default function ChatPage() {
                 if (data.done) {
                   // Refresh the conversation to get saved messages
                   queryClient.invalidateQueries({ queryKey: ["/api/conversations", selectedConversationId] });
+                  // Also refresh the conversations list to update the title in sidebar
+                  queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
                 }
               } catch (e) {
                 // Ignore parse errors for incomplete chunks
