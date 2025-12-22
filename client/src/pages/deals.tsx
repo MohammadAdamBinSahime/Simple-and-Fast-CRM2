@@ -35,7 +35,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertDealSchema, dealStages, type Deal, type Contact, type Company, type InsertDeal } from "@shared/schema";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getErrorMessage } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -133,8 +133,8 @@ export default function Deals() {
       form.reset();
       toast({ title: "Deal created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create deal", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to create deal"), variant: "destructive" });
     },
   });
 
@@ -150,8 +150,8 @@ export default function Deals() {
       form.reset();
       toast({ title: "Deal updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update deal", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to update deal"), variant: "destructive" });
     },
   });
 
@@ -162,8 +162,8 @@ export default function Deals() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/deals"] });
     },
-    onError: () => {
-      toast({ title: "Failed to update deal stage", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to update deal stage"), variant: "destructive" });
     },
   });
 

@@ -40,7 +40,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertContactSchema, contactStatuses, type Contact, type Company, type InsertContact, type Tag } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getErrorMessage } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -208,8 +208,8 @@ export default function Contacts() {
       form.reset();
       toast({ title: "Contact created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create contact", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to create contact"), variant: "destructive" });
     },
   });
 
@@ -224,8 +224,8 @@ export default function Contacts() {
       form.reset();
       toast({ title: "Contact updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update contact", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to update contact"), variant: "destructive" });
     },
   });
 
@@ -238,8 +238,8 @@ export default function Contacts() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
       toast({ title: "Contact deleted successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete contact", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to delete contact"), variant: "destructive" });
     },
   });
 

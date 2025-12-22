@@ -1,8 +1,37 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+export class TrialExpiredError extends Error {
+  constructor() {
+    super("Your free trial has ended. Please subscribe to add, edit, or delete data.");
+    this.name = "TrialExpiredError";
+  }
+}
+
+export function isTrialExpiredError(error: unknown): error is TrialExpiredError {
+  return error instanceof TrialExpiredError;
+}
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof TrialExpiredError) {
+    return error.message;
+  }
+  return fallback;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
+    
+    // Check for trial expired error
+    try {
+      const json = JSON.parse(text);
+      if (json.code === "TRIAL_EXPIRED") {
+        throw new TrialExpiredError();
+      }
+    } catch (e) {
+      if (e instanceof TrialExpiredError) throw e;
+    }
+    
     throw new Error(`${res.status}: ${text}`);
   }
 }

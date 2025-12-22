@@ -48,7 +48,7 @@ import {
   type Deal,
   type InsertTask,
 } from "@shared/schema";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getErrorMessage } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
@@ -144,8 +144,8 @@ export default function Tasks() {
       form.reset();
       toast({ title: "Task created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create task", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to create task"), variant: "destructive" });
     },
   });
 
@@ -160,8 +160,8 @@ export default function Tasks() {
       form.reset();
       toast({ title: "Task updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update task", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to update task"), variant: "destructive" });
     },
   });
 
@@ -172,8 +172,8 @@ export default function Tasks() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
     },
-    onError: () => {
-      toast({ title: "Failed to update task", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to update task"), variant: "destructive" });
     },
   });
 
@@ -186,8 +186,8 @@ export default function Tasks() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
       toast({ title: "Task deleted successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete task", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to delete task"), variant: "destructive" });
     },
   });
 

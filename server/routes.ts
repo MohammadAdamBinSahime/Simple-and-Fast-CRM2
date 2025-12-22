@@ -25,6 +25,47 @@ function getUserId(req: Request): string | null {
   return user?.claims?.sub || null;
 }
 
+// Middleware to check if user has active subscription or trial (for write operations)
+const TRIAL_DAYS = 7;
+
+async function requireActiveAccess(req: Request, res: any, next: any) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const user = await stripeService.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // If user has active subscription, allow access
+    if (user.stripeSubscriptionId) {
+      return next();
+    }
+
+    // Check if trial is still active
+    const now = new Date();
+    const createdAt = user.createdAt ? new Date(user.createdAt) : now;
+    const trialEndDate = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+    const isTrialActive = trialEndDate > now;
+
+    if (isTrialActive) {
+      return next();
+    }
+
+    // Trial expired and no subscription - read-only mode
+    return res.status(403).json({ 
+      error: "Your free trial has ended. Please subscribe to add, edit, or delete data.",
+      code: "TRIAL_EXPIRED"
+    });
+  } catch (error) {
+    console.error("Error checking access:", error);
+    return res.status(500).json({ error: "Failed to verify access" });
+  }
+}
+
 const updateContactSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
@@ -110,7 +151,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/contacts", async (req, res) => {
+  app.post("/api/contacts", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertContactSchema.parse(req.body);
       const contact = await storage.createContact(data);
@@ -124,7 +165,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/contacts/:id", async (req, res) => {
+  app.patch("/api/contacts/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = updateContactSchema.parse(req.body);
       const contact = await storage.updateContact(req.params.id, data);
@@ -141,7 +182,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/contacts/:id", async (req, res) => {
+  app.delete("/api/contacts/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteContact(req.params.id);
       res.status(204).send();
@@ -174,7 +215,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/companies", async (req, res) => {
+  app.post("/api/companies", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(data);
@@ -188,7 +229,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/companies/:id", async (req, res) => {
+  app.patch("/api/companies/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = updateCompanySchema.parse(req.body);
       const company = await storage.updateCompany(req.params.id, data);
@@ -205,7 +246,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/companies/:id", async (req, res) => {
+  app.delete("/api/companies/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteCompany(req.params.id);
       res.status(204).send();
@@ -238,7 +279,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/deals", async (req, res) => {
+  app.post("/api/deals", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertDealSchema.parse(req.body);
       const deal = await storage.createDeal(data);
@@ -252,7 +293,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/deals/:id", async (req, res) => {
+  app.patch("/api/deals/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = updateDealSchema.parse(req.body);
       const deal = await storage.updateDeal(req.params.id, data);
@@ -269,7 +310,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/deals/:id", async (req, res) => {
+  app.delete("/api/deals/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteDeal(req.params.id);
       res.status(204).send();
@@ -312,7 +353,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/notes", async (req, res) => {
+  app.post("/api/notes", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertNoteSchema.parse(req.body);
       const note = await storage.createNote(data);
@@ -326,7 +367,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/notes/:id", async (req, res) => {
+  app.patch("/api/notes/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = updateNoteSchema.parse(req.body);
       const note = await storage.updateNote(req.params.id, data);
@@ -343,7 +384,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/notes/:id", async (req, res) => {
+  app.delete("/api/notes/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteNote(req.params.id);
       res.status(204).send();
@@ -386,7 +427,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertTaskSchema.parse(req.body);
       const task = await storage.createTask(data);
@@ -400,7 +441,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/tasks/:id", async (req, res) => {
+  app.patch("/api/tasks/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = updateTaskSchema.parse(req.body);
       const task = await storage.updateTask(req.params.id, data);
@@ -417,7 +458,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/tasks/:id", async (req, res) => {
+  app.delete("/api/tasks/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteTask(req.params.id);
       res.status(204).send();
@@ -438,7 +479,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/tags", async (req, res) => {
+  app.post("/api/tags", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertTagSchema.parse(req.body);
       const tag = await storage.createTag(data);
@@ -452,7 +493,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/tags/:id", async (req, res) => {
+  app.delete("/api/tags/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteTag(req.params.id);
       res.status(204).send();
@@ -473,7 +514,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/contacts/:contactId/tags/:tagId", async (req, res) => {
+  app.post("/api/contacts/:contactId/tags/:tagId", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const contactTag = await storage.addTagToContact(req.params.contactId, req.params.tagId);
       res.status(201).json(contactTag);
@@ -483,7 +524,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/contacts/:contactId/tags/:tagId", async (req, res) => {
+  app.delete("/api/contacts/:contactId/tags/:tagId", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       await storage.removeTagFromContact(req.params.contactId, req.params.tagId);
       res.status(204).send();
@@ -514,7 +555,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/activities", async (req, res) => {
+  app.post("/api/activities", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
       const data = insertActivitySchema.parse(req.body);
       const activity = await storage.createActivity(data);
@@ -571,11 +612,8 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/email-accounts", async (req, res) => {
+  app.post("/api/email-accounts", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const data = insertEmailAccountSchema.parse({
         ...req.body,
         userId: getUserId(req)!,
@@ -591,11 +629,8 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/email-accounts/:id", async (req, res) => {
+  app.delete("/api/email-accounts/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const account = await storage.getEmailAccount(req.params.id);
       if (!account) {
         return res.status(404).json({ error: "Email account not found" });
@@ -644,11 +679,8 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/email-templates", async (req, res) => {
+  app.post("/api/email-templates", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const data = insertEmailTemplateSchema.parse({
         ...req.body,
         userId: getUserId(req)!,
@@ -664,11 +696,8 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/email-templates/:id", async (req, res) => {
+  app.patch("/api/email-templates/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const existing = await storage.getEmailTemplate(req.params.id);
       if (!existing) {
         return res.status(404).json({ error: "Email template not found" });
@@ -684,11 +713,8 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/email-templates/:id", async (req, res) => {
+  app.delete("/api/email-templates/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const template = await storage.getEmailTemplate(req.params.id);
       if (!template) {
         return res.status(404).json({ error: "Email template not found" });
@@ -737,11 +763,8 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/scheduled-emails", async (req, res) => {
+  app.post("/api/scheduled-emails", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const data = insertScheduledEmailSchema.parse({
         ...req.body,
         userId: getUserId(req)!,
@@ -757,11 +780,8 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/scheduled-emails/:id", async (req, res) => {
+  app.patch("/api/scheduled-emails/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const existing = await storage.getScheduledEmail(req.params.id);
       if (!existing) {
         return res.status(404).json({ error: "Scheduled email not found" });
@@ -777,11 +797,8 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/scheduled-emails/:id", async (req, res) => {
+  app.delete("/api/scheduled-emails/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const email = await storage.getScheduledEmail(req.params.id);
       if (!email) {
         return res.status(404).json({ error: "Scheduled email not found" });

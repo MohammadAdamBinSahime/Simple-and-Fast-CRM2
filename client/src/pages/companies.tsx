@@ -38,7 +38,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCompanySchema, type Company, type InsertCompany } from "@shared/schema";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, getErrorMessage } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { formatDistanceToNow } from "date-fns";
@@ -136,8 +136,8 @@ export default function Companies() {
       form.reset();
       toast({ title: "Company created successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to create company", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to create company"), variant: "destructive" });
     },
   });
 
@@ -152,8 +152,8 @@ export default function Companies() {
       form.reset();
       toast({ title: "Company updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update company", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to update company"), variant: "destructive" });
     },
   });
 
@@ -166,8 +166,8 @@ export default function Companies() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
       toast({ title: "Company deleted successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete company", variant: "destructive" });
+    onError: (error) => {
+      toast({ title: getErrorMessage(error, "Failed to delete company"), variant: "destructive" });
     },
   });
 
