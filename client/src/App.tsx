@@ -9,6 +9,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandSearch } from "@/components/command-search";
 import { useAuth } from "@/hooks/use-auth";
+import { TrialBanner } from "@/components/trial-banner";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
@@ -50,6 +51,7 @@ function AuthenticatedApp() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
+          <TrialBanner />
           <header className="flex items-center justify-between gap-4 p-4 border-b h-14 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
