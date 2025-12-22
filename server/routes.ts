@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { stripeService } from "./stripeService";
-import { getStripePublishableKey } from "./stripeClient";
+import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { isAuthenticated } from "./replit_integrations/auth";
 import {
   insertContactSchema,
@@ -1084,35 +1084,40 @@ export async function registerRoutes(
     }
   });
 
-  // Get products with prices (requires auth)
+  // Get products with prices (requires auth) - fetches directly from Stripe
   app.get("/api/billing/products", isAuthenticated, async (req, res) => {
     try {
-      const rows = await stripeService.listProductsWithPrices();
+      const stripe = await getUncachableStripeClient();
       
-      const productsMap = new Map();
-      for (const row of rows as any[]) {
-        if (!productsMap.has(row.product_id)) {
-          productsMap.set(row.product_id, {
-            id: row.product_id,
-            name: row.product_name,
-            description: row.product_description,
-            active: row.product_active,
-            metadata: row.product_metadata,
-            prices: []
+      // Fetch active products directly from Stripe
+      const products = await stripe.products.list({ active: true, limit: 10 });
+      
+      const productsWithPrices = await Promise.all(
+        products.data.map(async (product) => {
+          const prices = await stripe.prices.list({ 
+            product: product.id, 
+            active: true,
+            limit: 5 
           });
-        }
-        if (row.price_id) {
-          productsMap.get(row.product_id).prices.push({
-            id: row.price_id,
-            unit_amount: row.unit_amount,
-            currency: row.currency,
-            recurring: row.recurring,
-            active: row.price_active,
-          });
-        }
-      }
+          
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            active: product.active,
+            metadata: product.metadata,
+            prices: prices.data.map(price => ({
+              id: price.id,
+              unit_amount: price.unit_amount,
+              currency: price.currency,
+              recurring: price.recurring,
+              active: price.active,
+            }))
+          };
+        })
+      );
 
-      res.json({ data: Array.from(productsMap.values()) });
+      res.json({ data: productsWithPrices });
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ error: "Failed to fetch products" });
