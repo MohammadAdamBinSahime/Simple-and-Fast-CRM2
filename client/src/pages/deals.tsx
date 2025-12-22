@@ -41,8 +41,8 @@ import { z } from "zod";
 import { format } from "date-fns";
 
 const dealFormSchema = insertDealSchema.extend({
-  name: z.string().min(1, "Deal name is required"),
-  value: z.string().min(1, "Value is required"),
+  name: z.string().default(""),
+  value: z.string().default("0"),
 });
 
 type DealFormValues = z.infer<typeof dealFormSchema>;

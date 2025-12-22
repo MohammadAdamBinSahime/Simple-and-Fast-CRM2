@@ -214,7 +214,6 @@ export default function Email() {
                     id="template-name"
                     name="name"
                     placeholder="e.g., Follow-up Email"
-                    required
                     data-testid="input-template-name"
                   />
                 </div>
@@ -224,7 +223,6 @@ export default function Email() {
                     id="template-subject"
                     name="subject"
                     placeholder="Email subject"
-                    required
                     data-testid="input-template-subject"
                   />
                 </div>
@@ -235,7 +233,6 @@ export default function Email() {
                     name="body"
                     placeholder="Write your email template..."
                     rows={6}
-                    required
                     data-testid="input-template-body"
                   />
                 </div>
@@ -309,7 +306,6 @@ export default function Email() {
                     name="toEmail"
                     type="email"
                     placeholder="recipient@example.com"
-                    required
                     data-testid="input-to-email"
                   />
                 </div>
@@ -320,7 +316,6 @@ export default function Email() {
                     id="subject"
                     name="subject"
                     placeholder="Email subject"
-                    required
                     data-testid="input-subject"
                   />
                 </div>
@@ -332,7 +327,6 @@ export default function Email() {
                     name="body"
                     placeholder="Write your message..."
                     rows={8}
-                    required
                     data-testid="input-body"
                   />
                 </div>

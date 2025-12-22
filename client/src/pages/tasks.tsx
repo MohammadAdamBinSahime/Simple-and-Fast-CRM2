@@ -55,7 +55,7 @@ import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const taskFormSchema = insertTaskSchema.extend({
-  title: z.string().min(1, "Title is required"),
+  title: z.string().default(""),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;

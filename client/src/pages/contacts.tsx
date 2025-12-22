@@ -45,9 +45,9 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
 const contactFormSchema = insertContactSchema.extend({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
+  firstName: z.string().default(""),
+  lastName: z.string().default(""),
+  email: z.string().default(""),
 });
 
 type ContactFormValues = z.infer<typeof contactFormSchema>;

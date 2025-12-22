@@ -44,7 +44,7 @@ import { z } from "zod";
 import { formatDistanceToNow } from "date-fns";
 
 const companyFormSchema = insertCompanySchema.extend({
-  name: z.string().min(1, "Company name is required"),
+  name: z.string().default(""),
 });
 
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
