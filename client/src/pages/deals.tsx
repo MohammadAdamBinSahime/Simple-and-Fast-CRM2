@@ -192,9 +192,9 @@ export default function Deals() {
   };
 
   const formatCurrency = (value: number | string) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("ms-MY", {
       style: "currency",
-      currency: "USD",
+      currency: "MYR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(Number(value));
@@ -364,7 +364,7 @@ export default function Deals() {
                   name="value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Value ($)</FormLabel>
+                      <FormLabel>Value (RM)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
