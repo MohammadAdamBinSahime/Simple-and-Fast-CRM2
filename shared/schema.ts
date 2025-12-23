@@ -179,6 +179,7 @@ export const scheduledEmails = pgTable("scheduled_emails", {
   ccEmail: text("cc_email"),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
+  provider: text("provider").notNull().default("gmail"), // gmail, outlook
   status: text("status").notNull().default("draft"),
   scheduledAt: timestamp("scheduled_at"),
   sentAt: timestamp("sent_at"),

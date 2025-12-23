@@ -830,17 +830,32 @@ export async function registerRoutes(
       });
       const email = await storage.createScheduledEmail(data);
       
-      // If status is "sending", send the email immediately via Gmail
+      // If status is "sending", send the email immediately via selected provider
       if (data.status === "sending" && !data.scheduledAt) {
         try {
-          const { sendEmailViaGmail } = await import("./gmail");
-          await sendEmailViaGmail({
-            to: data.toEmail,
-            cc: data.ccEmail || undefined,
-            subject: data.subject,
-            body: data.body,
-            isHtml: false,
-          });
+          const provider = (data as any).provider || "gmail";
+          
+          if (provider === "outlook") {
+            const { sendEmailViaOutlook } = await import("./outlook");
+            await sendEmailViaOutlook({
+              to: data.toEmail,
+              cc: data.ccEmail || undefined,
+              subject: data.subject,
+              body: data.body,
+              isHtml: false,
+            });
+          } else {
+            // Default to Gmail
+            const { sendEmailViaGmail } = await import("./gmail");
+            await sendEmailViaGmail({
+              to: data.toEmail,
+              cc: data.ccEmail || undefined,
+              subject: data.subject,
+              body: data.body,
+              isHtml: false,
+            });
+          }
+          
           // Update status to sent
           await storage.updateScheduledEmail(email.id, { 
             status: "sent",
