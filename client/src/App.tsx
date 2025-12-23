@@ -1,6 +1,6 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -22,6 +22,19 @@ import ChatPage from "@/pages/chat";
 import BillingPage from "@/pages/billing";
 import Home from "@/pages/home";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+
+interface TrialStatus {
+  isTrialActive: boolean;
+  daysLeft: number;
+  trialEndDate: string;
+  hasSubscription: boolean;
+}
+
+interface Subscription {
+  id: string;
+  status: string;
+}
 
 function Router() {
   return (
@@ -41,10 +54,42 @@ function Router() {
 }
 
 function AuthenticatedApp() {
+  const [location, setLocation] = useLocation();
   const style = {
     "--sidebar-width": "15rem",
     "--sidebar-width-icon": "3rem",
   };
+
+  const { data: trialData, isLoading: trialLoading } = useQuery<TrialStatus>({
+    queryKey: ["/api/billing/trial"],
+  });
+
+  const { data: subscriptionData, isLoading: subscriptionLoading } = useQuery<{ subscription: Subscription | null }>({
+    queryKey: ["/api/billing/subscription"],
+  });
+
+  const isLoading = trialLoading || subscriptionLoading;
+  const trial = trialData;
+  const subscription = subscriptionData?.subscription;
+
+  useEffect(() => {
+    if (isLoading) return;
+    
+    const trialExpired = trial && !trial.isTrialActive;
+    const hasActiveSubscription = subscription && subscription.status === "active";
+    
+    if (trialExpired && !hasActiveSubscription && location !== "/billing") {
+      setLocation("/billing");
+    }
+  }, [isLoading, trial, subscription, location, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
