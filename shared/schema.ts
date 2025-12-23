@@ -15,6 +15,7 @@ export const companies = pgTable("companies", {
   size: text("size"),
   address: text("address"),
   phone: text("phone"),
+  logoUrl: text("logo_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -31,6 +32,7 @@ export const contacts = pgTable("contacts", {
   linkedinUrl: text("linkedin_url"),
   facebookUrl: text("facebook_url"),
   whatsappNumber: text("whatsapp_number"),
+  photoUrl: text("photo_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
