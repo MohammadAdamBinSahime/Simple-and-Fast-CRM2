@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { isAuthenticated } from "./replit_integrations/auth";
+import { authStorage } from "./replit_integrations/auth/storage";
 import {
   insertContactSchema,
   insertCompanySchema,
@@ -139,6 +140,30 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // Get current user info
+  app.get("/api/me", async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const user = await authStorage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
   app.get("/api/dashboard/metrics", async (req, res) => {
     try {
       const metrics = await storage.getDashboardMetrics();
