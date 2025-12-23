@@ -126,16 +126,37 @@ Stripe integration is now active for subscription management:
 Run `npx tsx scripts/seed-products.ts` to create subscription products in Stripe.
 Products are automatically synced to the database via webhooks.
 
+## UAT Mode (Current Branch)
+
+This branch is configured for User Acceptance Testing (UAT) with the following settings:
+- **Authentication disabled**: No login required, all users share a default test user ID
+- **Trial checks bypassed**: Full access to all features without subscription
+- **Default user**: All operations use `uat-test-user` as the user ID
+- **Currency**: Malaysian Ringgit (RM/MYR)
+- **Subscription**: Single plan at RM59.99/month
+
+To re-enable authentication for production:
+1. Restore `setupAuth` and `registerAuthRoutes` in `server/index.ts`
+2. Re-add `isAuthenticated` middleware to protected routes
+3. Restore `useAuth` hook usage in frontend components
+
 ## Recent Changes
+
+- December 2024: UAT Mode - Removed authentication for testing
+  - Disabled login/logout system
+  - Default test user for all operations
+  - Trial and subscription checks bypassed
+  - All form fields made optional
 
 - December 2024: Switched AI Chatbot to Gemini
   - Now uses gemini-2.5-flash model via Replit AI Integrations
   - No API key needed - charges billed to Replit credits
   - Fixed session cookie settings for production compatibility
 
-- December 2024: Fixed AI Chatbot authentication
-  - Chat routes now correctly extract user ID from session claims
-  - Added isAuthenticated middleware for proper route protection
+- December 2024: Added single subscription plan
+  - RM59.99/month with 7-day free trial
+  - Read-only mode after trial expiry
+  - Malaysian Ringgit currency throughout
 
 - December 2024: Added AI Chatbot Assistant
   - Conversational AI assistant for CRM help
