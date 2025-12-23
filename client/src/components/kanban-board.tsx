@@ -37,6 +37,7 @@ export function KanbanBoard<T>({
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
     setDraggedItem(itemId);
     e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", itemId);
   };
 
   const handleDragOver = (e: React.DragEvent, columnId: string) => {
@@ -112,17 +113,18 @@ export function KanbanBoard<T>({
                 return (
                   <div
                     key={itemId}
-                    draggable
+                    draggable={true}
                     onDragStart={(e) => handleDragStart(e, itemId)}
                     onDragEnd={handleDragEnd}
                     className={cn(
-                      "cursor-grab active:cursor-grabbing transition-opacity",
+                      "cursor-grab active:cursor-grabbing transition-opacity select-none",
                       draggedItem === itemId && "opacity-50"
                     )}
+                    style={{ touchAction: "none" }}
                     data-testid={`${testIdPrefix}-card-${itemId}`}
                   >
-                    <Card className="hover-elevate">
-                      <div className="absolute top-3 right-3 opacity-50">
+                    <Card className="hover-elevate relative">
+                      <div className="absolute top-3 right-3 opacity-50 pointer-events-none">
                         <GripVertical className="h-4 w-4" />
                       </div>
                       {renderCard(item)}
