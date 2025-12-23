@@ -469,11 +469,15 @@ export default function Email() {
         </div>
       </div>
 
-      <Tabs defaultValue="scheduled" className="space-y-6">
+      <Tabs defaultValue="sent" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="sent" data-testid="tab-sent">
+            <Send className="h-4 w-4 mr-2" />
+            Sent ({scheduledEmails.filter(e => e.status === "sent").length})
+          </TabsTrigger>
           <TabsTrigger value="scheduled" data-testid="tab-scheduled">
             <Clock className="h-4 w-4 mr-2" />
-            Scheduled ({scheduledEmails.length})
+            Scheduled ({scheduledEmails.filter(e => e.status === "scheduled").length})
           </TabsTrigger>
           <TabsTrigger value="templates" data-testid="tab-templates">
             <FileText className="h-4 w-4 mr-2" />
@@ -481,27 +485,80 @@ export default function Email() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="sent" className="space-y-4">
+          {emailsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : scheduledEmails.filter(e => e.status === "sent").length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-8">
+                <Send className="h-10 w-10 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No sent emails yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {scheduledEmails.filter(e => e.status === "sent").map((email) => (
+                <Card key={email.id} data-testid={`card-sent-email-${email.id}`}>
+                  <CardContent className="flex items-center justify-between gap-4 py-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium truncate">{email.subject}</h3>
+                        {getStatusBadge(email.status)}
+                        <Badge variant="outline" className="text-xs">
+                          {(email as any).provider === "outlook" ? "Outlook" : "Gmail"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        To: {email.toEmail}
+                      </p>
+                      {email.sentAt && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Sent: {format(new Date(email.sentAt), "PPp")}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteEmail.mutate(email.id)}
+                      disabled={deleteEmail.isPending}
+                      data-testid={`button-delete-sent-${email.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="scheduled" className="space-y-4">
           {emailsLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : scheduledEmails.length === 0 ? (
+          ) : scheduledEmails.filter(e => e.status === "scheduled").length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
-                <Mail className="h-10 w-10 text-muted-foreground mb-4" />
+                <Clock className="h-10 w-10 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">No scheduled emails yet</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {scheduledEmails.map((email) => (
+              {scheduledEmails.filter(e => e.status === "scheduled").map((email) => (
                 <Card key={email.id} data-testid={`card-email-${email.id}`}>
                   <CardContent className="flex items-center justify-between gap-4 py-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium truncate">{email.subject}</h3>
                         {getStatusBadge(email.status)}
+                        <Badge variant="outline" className="text-xs">
+                          {(email as any).provider === "outlook" ? "Outlook" : "Gmail"}
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
                         To: {email.toEmail}
