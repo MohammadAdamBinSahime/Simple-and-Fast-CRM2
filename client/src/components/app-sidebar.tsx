@@ -9,6 +9,7 @@ import {
   LogOut,
   MessageCircle,
   CreditCard,
+  Code,
 } from "lucide-react";
 import {
   Sidebar,
@@ -72,6 +73,15 @@ const settingsNavItems = [
   },
 ];
 
+const developerNavItems = [
+  {
+    title: "Developer Tools",
+    url: "/developer",
+    icon: Code,
+  },
+];
+
+const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -132,6 +142,30 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {user?.email === DEVELOPER_EMAIL && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Developer
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {developerNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === item.url}
+                    >
+                      <Link href={item.url} data-testid={`nav-link-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="p-4 space-y-3">
         {user && (
