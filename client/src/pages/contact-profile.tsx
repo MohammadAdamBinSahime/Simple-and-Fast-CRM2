@@ -133,6 +133,20 @@ export default function ContactProfile() {
                     </Button>
                   )}
                 </div>
+
+                {contact.videoUrl && contact.videoUrl.trim().length > 0 && (
+                  <div className="mt-4 w-full">
+                    <p className="text-xs text-muted-foreground mb-2">Profile Video</p>
+                    <video
+                      src={contact.videoUrl}
+                      controls
+                      className="w-full rounded-md"
+                      data-testid="video-contact-profile"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
               </div>
 
               <Separator className="my-6" />

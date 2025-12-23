@@ -448,7 +448,7 @@ export default function Contacts() {
             />
             <Button variant="outline" asChild>
               <span>
-                <Upload className="h-4 w-4 mr-2" />
+                <UploadIcon className="h-4 w-4 mr-2" />
                 Import CSV
               </span>
             </Button>

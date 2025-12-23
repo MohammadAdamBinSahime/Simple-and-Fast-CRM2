@@ -94,6 +94,20 @@ export default function CompanyProfile() {
                 {company.industry && (
                   <Badge variant="secondary" className="mt-2">{company.industry}</Badge>
                 )}
+
+                {company.videoUrl && company.videoUrl.trim().length > 0 && (
+                  <div className="mt-4 w-full">
+                    <p className="text-xs text-muted-foreground mb-2">Company Video</p>
+                    <video
+                      src={company.videoUrl}
+                      controls
+                      className="w-full rounded-md"
+                      data-testid="video-company-profile"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                )}
               </div>
 
               <Separator className="my-6" />
