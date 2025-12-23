@@ -1,5 +1,4 @@
 import { Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -26,13 +25,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-
-interface TrialStatus {
-  isTrialActive: boolean;
-  daysLeft: number;
-  trialEndDate: string;
-  hasSubscription: boolean;
-}
 
 const mainNavItems = [
   {
@@ -75,6 +67,11 @@ const mainNavItems = [
 
 const settingsNavItems = [
   {
+    title: "Billing",
+    url: "/billing",
+    icon: CreditCard,
+  },
+  {
     title: "Settings",
     url: "/settings",
     icon: Settings,
@@ -85,13 +82,6 @@ const settingsNavItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
-  
-  const { data: trial } = useQuery<TrialStatus>({
-    queryKey: ["/api/billing/trial"],
-  });
-  
-  // Show Billing only after trial ends or if user has subscription
-  const showBilling = trial && (!trial.isTrialActive || trial.hasSubscription);
 
   return (
     <Sidebar>
@@ -132,19 +122,6 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {showBilling && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === "/billing"}
-                  >
-                    <Link href="/billing" data-testid="nav-link-billing">
-                      <CreditCard className="h-4 w-4" />
-                      <span>Billing</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
               {settingsNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
