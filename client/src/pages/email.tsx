@@ -39,7 +39,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import type { ScheduledEmail, EmailTemplate, Contact } from "@shared/schema";
+import type { ScheduledEmail, EmailTemplate } from "@shared/schema";
 
 interface UserInfo {
   id: string;
@@ -68,16 +68,11 @@ export default function Email() {
     queryKey: ["/api/email-templates"],
   });
 
-  const { data: contacts = [] } = useQuery<Contact[]>({
-    queryKey: ["/api/contacts"],
-  });
-
   const createEmail = useMutation({
     mutationFn: async (data: {
       toEmail: string;
       subject: string;
       body: string;
-      contactId?: string;
       fromEmail?: string;
       scheduledAt?: Date;
       status: string;
@@ -134,7 +129,6 @@ export default function Email() {
     const toEmail = formData.get("toEmail") as string;
     const subject = formData.get("subject") as string;
     const body = formData.get("body") as string;
-    const contactId = formData.get("contactId") as string;
 
     let scheduledAt: Date | undefined;
     if (selectedDate) {
@@ -147,7 +141,6 @@ export default function Email() {
       toEmail,
       subject,
       body,
-      contactId: contactId || undefined,
       fromEmail: user?.email || undefined,
       scheduledAt,
       status: scheduledAt ? "scheduled" : "draft",
@@ -267,28 +260,11 @@ export default function Email() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleComposeSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="contactId">Select Contact</Label>
-                    <Select name="contactId">
-                      <SelectTrigger data-testid="select-contact">
-                        <SelectValue placeholder="Choose a contact" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {contacts.map((contact) => (
-                          <SelectItem key={contact.id} value={contact.id}>
-                            {contact.firstName} {contact.lastName} ({contact.email})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Send From</Label>
-                    <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{user?.email || "Loading..."}</span>
-                    </div>
+                <div className="space-y-2">
+                  <Label>Send From</Label>
+                  <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{user?.email || "Loading..."}</span>
                   </div>
                 </div>
 
