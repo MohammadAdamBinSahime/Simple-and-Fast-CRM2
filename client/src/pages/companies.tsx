@@ -310,6 +310,7 @@ export default function Companies() {
         data={filteredCompanies || []}
         isLoading={isLoading}
         getRowId={(row) => row.id}
+        onRowClick={(row) => setLocation(`/companies/${row.id}`)}
         selectedRows={selectedRows}
         onSelectRow={(id) => {
           setSelectedRows((prev) =>

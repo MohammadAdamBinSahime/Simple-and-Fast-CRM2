@@ -13,7 +13,9 @@ import { TrialBanner } from "@/components/trial-banner";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
+import ContactProfile from "@/pages/contact-profile";
 import Companies from "@/pages/companies";
+import CompanyProfile from "@/pages/company-profile";
 import Deals from "@/pages/deals";
 import Tasks from "@/pages/tasks";
 import Email from "@/pages/email";
@@ -40,7 +42,9 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/contacts" component={Contacts} />
+      <Route path="/contacts/:id" component={ContactProfile} />
       <Route path="/companies" component={Companies} />
+      <Route path="/companies/:id" component={CompanyProfile} />
       <Route path="/deals" component={Deals} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/email" component={Email} />

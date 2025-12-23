@@ -476,6 +476,7 @@ export default function Contacts() {
         data={filteredContacts || []}
         isLoading={isLoading}
         getRowId={(row) => row.id}
+        onRowClick={(row) => setLocation(`/contacts/${row.id}`)}
         selectedRows={selectedRows}
         onSelectRow={(id) => {
           setSelectedRows((prev) =>
