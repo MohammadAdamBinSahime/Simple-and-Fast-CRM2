@@ -4,7 +4,6 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { stripeService } from "./stripeService";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
-import { isAuthenticated } from "./replit_integrations/auth";
 import {
   insertContactSchema,
   insertCompanySchema,
@@ -19,51 +18,17 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
-// Helper to extract user ID from session claims
-function getUserId(req: Request): string | null {
-  const user = req.user as any;
-  return user?.claims?.sub || null;
+// UAT Mode: Default test user ID (authentication removed for testing)
+const UAT_USER_ID = "uat-test-user";
+
+// Helper to get user ID - returns default UAT user for testing
+function getUserId(req: Request): string {
+  return UAT_USER_ID;
 }
 
-// Middleware to check if user has active subscription or trial (for write operations)
-const TRIAL_DAYS = 7;
-
+// UAT Mode: Skip trial/subscription checks - allow full access for testing
 async function requireActiveAccess(req: Request, res: any, next: any) {
-  try {
-    const userId = getUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const user = await stripeService.getUser(userId);
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    // If user has active subscription, allow access
-    if (user.stripeSubscriptionId) {
-      return next();
-    }
-
-    // Check if trial is still active
-    const now = new Date();
-    const createdAt = user.createdAt ? new Date(user.createdAt) : now;
-    const trialEndDate = new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const isTrialActive = trialEndDate > now;
-
-    if (isTrialActive) {
-      return next();
-    }
-
-    // Trial expired and no subscription - read-only mode
-    return res.status(403).json({ 
-      error: "Your free trial has ended. Please subscribe to add, edit, or delete data.",
-      code: "TRIAL_EXPIRED"
-    });
-  } catch (error) {
-    console.error("Error checking access:", error);
-    return res.status(500).json({ error: "Failed to verify access" });
-  }
+  return next();
 }
 
 const updateContactSchema = z.object({
@@ -151,7 +116,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/contacts", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/contacts", requireActiveAccess, async (req, res) => {
     try {
       const data = insertContactSchema.parse(req.body);
       const contact = await storage.createContact(data);
@@ -165,7 +130,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/contacts/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/contacts/:id", requireActiveAccess, async (req, res) => {
     try {
       const data = updateContactSchema.parse(req.body);
       const contact = await storage.updateContact(req.params.id, data);
@@ -182,7 +147,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/contacts/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/contacts/:id", requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteContact(req.params.id);
       res.status(204).send();
@@ -215,7 +180,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/companies", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/companies", requireActiveAccess, async (req, res) => {
     try {
       const data = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(data);
@@ -229,7 +194,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/companies/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/companies/:id", requireActiveAccess, async (req, res) => {
     try {
       const data = updateCompanySchema.parse(req.body);
       const company = await storage.updateCompany(req.params.id, data);
@@ -246,7 +211,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/companies/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/companies/:id", requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteCompany(req.params.id);
       res.status(204).send();
@@ -279,7 +244,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/deals", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/deals", requireActiveAccess, async (req, res) => {
     try {
       const data = insertDealSchema.parse(req.body);
       const deal = await storage.createDeal(data);
@@ -293,7 +258,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/deals/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/deals/:id", requireActiveAccess, async (req, res) => {
     try {
       const data = updateDealSchema.parse(req.body);
       const deal = await storage.updateDeal(req.params.id, data);
@@ -310,7 +275,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/deals/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/deals/:id", requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteDeal(req.params.id);
       res.status(204).send();
@@ -353,7 +318,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/notes", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/notes", requireActiveAccess, async (req, res) => {
     try {
       const data = insertNoteSchema.parse(req.body);
       const note = await storage.createNote(data);
@@ -367,7 +332,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/notes/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/notes/:id", requireActiveAccess, async (req, res) => {
     try {
       const data = updateNoteSchema.parse(req.body);
       const note = await storage.updateNote(req.params.id, data);
@@ -384,7 +349,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/notes/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/notes/:id", requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteNote(req.params.id);
       res.status(204).send();
@@ -427,7 +392,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/tasks", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/tasks", requireActiveAccess, async (req, res) => {
     try {
       const data = insertTaskSchema.parse(req.body);
       const task = await storage.createTask(data);
@@ -441,7 +406,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/tasks/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/tasks/:id", requireActiveAccess, async (req, res) => {
     try {
       const data = updateTaskSchema.parse(req.body);
       const task = await storage.updateTask(req.params.id, data);
@@ -458,7 +423,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/tasks/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/tasks/:id", requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteTask(req.params.id);
       res.status(204).send();
@@ -479,7 +444,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/tags", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/tags", requireActiveAccess, async (req, res) => {
     try {
       const data = insertTagSchema.parse(req.body);
       const tag = await storage.createTag(data);
@@ -493,7 +458,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/tags/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/tags/:id", requireActiveAccess, async (req, res) => {
     try {
       await storage.deleteTag(req.params.id);
       res.status(204).send();
@@ -514,7 +479,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/contacts/:contactId/tags/:tagId", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/contacts/:contactId/tags/:tagId", requireActiveAccess, async (req, res) => {
     try {
       const contactTag = await storage.addTagToContact(req.params.contactId, req.params.tagId);
       res.status(201).json(contactTag);
@@ -524,7 +489,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/contacts/:contactId/tags/:tagId", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/contacts/:contactId/tags/:tagId", requireActiveAccess, async (req, res) => {
     try {
       await storage.removeTagFromContact(req.params.contactId, req.params.tagId);
       res.status(204).send();
@@ -555,7 +520,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/activities", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/activities", requireActiveAccess, async (req, res) => {
     try {
       const data = insertActivitySchema.parse(req.body);
       const activity = await storage.createActivity(data);
@@ -612,7 +577,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/email-accounts", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/email-accounts", requireActiveAccess, async (req, res) => {
     try {
       const data = insertEmailAccountSchema.parse({
         ...req.body,
@@ -629,7 +594,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/email-accounts/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/email-accounts/:id", requireActiveAccess, async (req, res) => {
     try {
       const account = await storage.getEmailAccount(req.params.id);
       if (!account) {
@@ -679,7 +644,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/email-templates", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/email-templates", requireActiveAccess, async (req, res) => {
     try {
       const data = insertEmailTemplateSchema.parse({
         ...req.body,
@@ -696,7 +661,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/email-templates/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/email-templates/:id", requireActiveAccess, async (req, res) => {
     try {
       const existing = await storage.getEmailTemplate(req.params.id);
       if (!existing) {
@@ -713,7 +678,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/email-templates/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/email-templates/:id", requireActiveAccess, async (req, res) => {
     try {
       const template = await storage.getEmailTemplate(req.params.id);
       if (!template) {
@@ -763,7 +728,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/scheduled-emails", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.post("/api/scheduled-emails", requireActiveAccess, async (req, res) => {
     try {
       const data = insertScheduledEmailSchema.parse({
         ...req.body,
@@ -780,7 +745,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/scheduled-emails/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.patch("/api/scheduled-emails/:id", requireActiveAccess, async (req, res) => {
     try {
       const existing = await storage.getScheduledEmail(req.params.id);
       if (!existing) {
@@ -797,7 +762,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/scheduled-emails/:id", isAuthenticated, requireActiveAccess, async (req, res) => {
+  app.delete("/api/scheduled-emails/:id", requireActiveAccess, async (req, res) => {
     try {
       const email = await storage.getScheduledEmail(req.params.id);
       if (!email) {
@@ -1091,7 +1056,7 @@ export async function registerRoutes(
   // ============== BILLING ROUTES ==============
 
   // Get Stripe publishable key (requires auth)
-  app.get("/api/billing/config", isAuthenticated, async (req, res) => {
+  app.get("/api/billing/config",  async (req, res) => {
     try {
       const publishableKey = await getStripePublishableKey();
       res.json({ publishableKey });
@@ -1102,7 +1067,7 @@ export async function registerRoutes(
   });
 
   // Get products with prices (requires auth) - fetches directly from Stripe
-  app.get("/api/billing/products", isAuthenticated, async (req, res) => {
+  app.get("/api/billing/products",  async (req, res) => {
     try {
       const stripe = await getUncachableStripeClient();
       
@@ -1142,7 +1107,7 @@ export async function registerRoutes(
   });
 
   // Get user subscription status (requires auth)
-  app.get("/api/billing/subscription", isAuthenticated, async (req, res) => {
+  app.get("/api/billing/subscription",  async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
@@ -1163,7 +1128,7 @@ export async function registerRoutes(
   });
 
   // Get trial status (requires auth)
-  app.get("/api/billing/trial", isAuthenticated, async (req, res) => {
+  app.get("/api/billing/trial",  async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
@@ -1195,7 +1160,7 @@ export async function registerRoutes(
   });
 
   // Create checkout session (requires auth)
-  app.post("/api/billing/checkout", isAuthenticated, async (req, res) => {
+  app.post("/api/billing/checkout",  async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {
@@ -1239,7 +1204,7 @@ export async function registerRoutes(
   });
 
   // Create customer portal session (requires auth)
-  app.post("/api/billing/portal", isAuthenticated, async (req, res) => {
+  app.post("/api/billing/portal",  async (req, res) => {
     try {
       const userId = getUserId(req);
       if (!userId) {

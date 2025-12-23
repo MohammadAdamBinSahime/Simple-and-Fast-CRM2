@@ -7,7 +7,6 @@ import {
   CheckSquare,
   Mail,
   Settings,
-  LogOut,
   MessageCircle,
   CreditCard,
 } from "lucide-react";
@@ -23,8 +22,6 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
 
 const mainNavItems = [
   {
@@ -81,7 +78,6 @@ const settingsNavItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
 
   return (
     <Sidebar>
@@ -139,24 +135,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 space-y-3">
-        {user && (
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium truncate" data-testid="text-username">
-              {user.firstName || user.email || "User"}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              data-testid="button-logout"
-            >
-              <a href="/api/logout">
-                <LogOut className="h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        )}
+      <SidebarFooter className="p-4">
+        <div className="text-xs text-muted-foreground text-center">
+          UAT Testing Mode
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

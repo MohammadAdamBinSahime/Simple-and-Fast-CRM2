@@ -4,12 +4,13 @@ import { chatStorage } from "./storage";
 import { db } from "../../db";
 import { contacts, deals, tasks } from "@shared/schema";
 import { desc } from "drizzle-orm";
-import { isAuthenticated } from "../auth";
 
-// Get user ID from session claims
-function getUserId(req: Request): string | null {
-  const user = req.user as any;
-  return user?.claims?.sub || null;
+// UAT Mode: Default test user ID (authentication removed for testing)
+const UAT_USER_ID = "uat-test-user";
+
+// Get user ID - returns default UAT user for testing
+function getUserId(req: Request): string {
+  return UAT_USER_ID;
 }
 
 // Using Gemini via Replit AI Integrations
@@ -34,12 +35,9 @@ Keep your responses concise, professional, and helpful. Use simple language suit
 
 export function registerChatRoutes(app: Express): void {
   // Get all conversations for the current user
-  app.get("/api/conversations", isAuthenticated, async (req: Request, res: Response) => {
+  app.get("/api/conversations", async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const conversations = await chatStorage.getAllConversations(userId);
       res.json(conversations);
     } catch (error) {
@@ -49,12 +47,9 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Get single conversation with messages
-  app.get("/api/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
+  app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const id = req.params.id;
       const conversation = await chatStorage.getConversation(id);
       if (!conversation) {
@@ -72,12 +67,9 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Create new conversation
-  app.post("/api/conversations", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/conversations", async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const { title } = req.body;
       const conversation = await chatStorage.createConversation(userId, title || "New Chat");
       res.status(201).json(conversation);
@@ -88,12 +80,9 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Delete conversation
-  app.delete("/api/conversations/:id", isAuthenticated, async (req: Request, res: Response) => {
+  app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const id = req.params.id;
       const conversation = await chatStorage.getConversation(id);
       if (conversation && conversation.userId !== userId) {
@@ -108,12 +97,9 @@ export function registerChatRoutes(app: Express): void {
   });
 
   // Send message and get AI response (streaming)
-  app.post("/api/conversations/:id/messages", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/conversations/:id/messages", async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
-      if (!userId) {
-        return res.status(401).json({ error: "Unauthorized" });
-      }
       const conversationId = req.params.id;
       const conversation = await chatStorage.getConversation(conversationId);
       

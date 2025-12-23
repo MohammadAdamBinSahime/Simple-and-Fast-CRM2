@@ -8,8 +8,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandSearch } from "@/components/command-search";
-import { useAuth } from "@/hooks/use-auth";
-import { TrialBanner } from "@/components/trial-banner";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Contacts from "@/pages/contacts";
@@ -20,8 +18,6 @@ import Email from "@/pages/email";
 import Settings from "@/pages/settings";
 import ChatPage from "@/pages/chat";
 import BillingPage from "@/pages/billing";
-import Home from "@/pages/home";
-import { Loader2 } from "lucide-react";
 
 function Router() {
   return (
@@ -40,7 +36,7 @@ function Router() {
   );
 }
 
-function AuthenticatedApp() {
+function AppContent() {
   const style = {
     "--sidebar-width": "15rem",
     "--sidebar-width-icon": "3rem",
@@ -51,7 +47,6 @@ function AuthenticatedApp() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
-          <TrialBanner />
           <header className="flex items-center justify-between gap-4 p-4 border-b h-14 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
@@ -66,24 +61,6 @@ function AuthenticatedApp() {
       </div>
     </SidebarProvider>
   );
-}
-
-function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Home />;
-  }
-
-  return <AuthenticatedApp />;
 }
 
 function App() {

@@ -2,11 +2,12 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { registerChatRoutes } from "./replit_integrations/chat";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import session from "express-session";
+import MemoryStore from "memorystore";
 
 const app = express();
 const httpServer = createServer(app);
@@ -130,9 +131,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Setup Replit Auth FIRST (must be before other routes)
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  // UAT Mode: Simple session without authentication
+  const SessionStore = MemoryStore(session);
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "uat-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    store: new SessionStore({ checkPeriod: 86400000 }),
+    cookie: { secure: false, maxAge: 86400000 }
+  }));
   
   // Register AI chat routes
   registerChatRoutes(app);
