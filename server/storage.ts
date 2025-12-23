@@ -11,6 +11,7 @@ import {
   emailTemplates,
   scheduledEmails,
   integrationAccounts,
+  logs,
   type Contact,
   type InsertContact,
   type Company,
@@ -35,6 +36,8 @@ import {
   type InsertScheduledEmail,
   type IntegrationAccount,
   type InsertIntegrationAccount,
+  type Log,
+  type InsertLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -518,6 +521,30 @@ export class DatabaseStorage implements IStorage {
   async deleteIntegrationAccount(id: string): Promise<boolean> {
     await db.delete(integrationAccounts).where(eq(integrationAccounts.id, id));
     return true;
+  }
+
+  async getLogs(limit: number = 100, level?: string): Promise<Log[]> {
+    if (level) {
+      return db.select().from(logs).where(eq(logs.level, level)).orderBy(desc(logs.createdAt)).limit(limit);
+    }
+    return db.select().from(logs).orderBy(desc(logs.createdAt)).limit(limit);
+  }
+
+  async createLog(log: InsertLog): Promise<Log> {
+    const [newLog] = await db.insert(logs).values(log).returning();
+    return newLog;
+  }
+
+  async clearLogs(): Promise<void> {
+    await db.delete(logs);
+  }
+
+  async getLogStats(): Promise<{ level: string; count: number }[]> {
+    const result = await db.select({
+      level: logs.level,
+      count: sql<number>`count(*)::int`,
+    }).from(logs).groupBy(logs.level);
+    return result;
   }
 }
 

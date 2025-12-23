@@ -1,9 +1,10 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { stripeService } from "./stripeService";
 import { pool } from "./db";
+import { logger } from "./logger";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { isAuthenticated } from "./replit_integrations/auth";
 import { authStorage } from "./replit_integrations/auth/storage";
@@ -1325,6 +1326,53 @@ export async function registerRoutes(
   // Developer-only endpoints
   const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
 
+  // Get logs (developer only)
+  app.get("/api/developer/logs", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user || user.email !== DEVELOPER_EMAIL) {
+        return res.status(403).json({ error: "Access denied. Developer only." });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 100;
+      const level = req.query.level as string | undefined;
+      
+      const logs = await storage.getLogs(limit, level);
+      const stats = await storage.getLogStats();
+      
+      res.json({ logs, stats });
+    } catch (error: any) {
+      console.error("Logs fetch error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch logs" });
+    }
+  });
+
+  // Clear logs (developer only)
+  app.delete("/api/developer/logs", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user || user.email !== DEVELOPER_EMAIL) {
+        return res.status(403).json({ error: "Access denied. Developer only." });
+      }
+
+      await storage.clearLogs();
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Clear logs error:", error);
+      res.status(500).json({ error: error.message || "Failed to clear logs" });
+    }
+  });
+
   // Get database schema info
   app.get("/api/developer/schema", isAuthenticated, async (req, res) => {
     try {
@@ -1485,6 +1533,22 @@ export async function registerRoutes(
         hint: error.hint,
       });
     }
+  });
+
+  // Global error handler that logs errors
+  app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+    const userId = getUserId(req);
+    logger.error(err.message, {
+      source: `${req.method} ${req.path}`,
+      userId: userId || undefined,
+      metadata: { 
+        method: req.method,
+        path: req.path,
+        query: req.query,
+      },
+    }, err);
+    
+    res.status(500).json({ error: "Internal server error" });
   });
 
   return httpServer;
