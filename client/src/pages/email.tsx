@@ -79,13 +79,17 @@ export default function Email() {
     }) => {
       return apiRequest("POST", "/api/scheduled-emails", data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/scheduled-emails"] });
       setComposeOpen(false);
-      toast({ title: "Email scheduled successfully" });
+      setSelectedDate(undefined);
+      toast({ 
+        title: variables.scheduledAt ? "Email scheduled" : "Email sent", 
+        description: variables.scheduledAt ? `Will be sent on ${format(variables.scheduledAt, "PPP")}` : "Your email is being sent now"
+      });
     },
     onError: () => {
-      toast({ title: "Failed to schedule email", variant: "destructive" });
+      toast({ title: "Failed to send email", variant: "destructive" });
     },
   });
 
@@ -143,7 +147,7 @@ export default function Email() {
       body,
       fromEmail: user?.email || undefined,
       scheduledAt,
-      status: scheduledAt ? "scheduled" : "draft",
+      status: scheduledAt ? "scheduled" : "sending",
     });
   };
 
@@ -364,7 +368,7 @@ export default function Email() {
                     ) : (
                       <>
                         <Send className="h-4 w-4 mr-2" />
-                        Save Draft
+                        Send Now
                       </>
                     )}
                   </Button>
