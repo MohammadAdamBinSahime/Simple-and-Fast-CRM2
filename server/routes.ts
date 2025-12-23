@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { stripeService } from "./stripeService";
+import { pool } from "./db";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { isAuthenticated } from "./replit_integrations/auth";
 import { authStorage } from "./replit_integrations/auth/storage";
@@ -1318,6 +1319,44 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error creating portal session:", error);
       res.status(500).json({ error: "Failed to create portal session" });
+    }
+  });
+
+  // Developer-only SQL endpoint
+  const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
+  
+  app.post("/api/developer/sql", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user || user.email !== DEVELOPER_EMAIL) {
+        return res.status(403).json({ error: "Access denied. Developer only." });
+      }
+
+      const { query } = req.body;
+      if (!query || typeof query !== "string") {
+        return res.status(400).json({ error: "Query is required" });
+      }
+
+      // Execute the SQL query
+      const result = await pool.query(query);
+      
+      res.json({
+        rows: result.rows,
+        rowCount: result.rowCount,
+        fields: result.fields?.map(f => ({ name: f.name, dataTypeID: f.dataTypeID })),
+      });
+    } catch (error: any) {
+      console.error("SQL query error:", error);
+      res.status(400).json({ 
+        error: error.message || "Failed to execute query",
+        detail: error.detail,
+        hint: error.hint,
+      });
     }
   });
 

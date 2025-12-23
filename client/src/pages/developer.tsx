@@ -1,18 +1,30 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
-import { useQuery } from "@tanstack/react-query";
-import { Code, Database, Server, Users, Building2, HandshakeIcon, CheckSquare, FileText, Tag, RefreshCw } from "lucide-react";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Code, Database, Server, Users, Building2, HandshakeIcon, CheckSquare, FileText, Tag, RefreshCw, Play, Loader2, Terminal } from "lucide-react";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Contact, Company, Deal, Task, Note } from "@shared/schema";
 
 const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
 
+interface SqlResult {
+  rows: Record<string, any>[];
+  rowCount: number;
+  fields: { name: string; dataTypeID: number }[];
+}
+
 export default function Developer() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [sqlQuery, setSqlQuery] = useState("SELECT * FROM contacts LIMIT 10;");
+  const [sqlResult, setSqlResult] = useState<SqlResult | null>(null);
+  const [sqlError, setSqlError] = useState<string | null>(null);
 
   const { data: contacts } = useQuery<Contact[]>({ queryKey: ["/api/contacts"] });
   const { data: companies } = useQuery<Company[]>({ queryKey: ["/api/companies"] });
@@ -31,6 +43,29 @@ export default function Developer() {
       </div>
     );
   }
+
+  const sqlMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await apiRequest("POST", "/api/developer/sql", { query });
+      return response.json();
+    },
+    onSuccess: (data: SqlResult) => {
+      setSqlResult(data);
+      setSqlError(null);
+      toast({ title: "Query executed", description: `${data.rowCount ?? data.rows.length} row(s) returned` });
+    },
+    onError: (error: any) => {
+      setSqlResult(null);
+      setSqlError(error.message || "Query failed");
+      toast({ title: "Query failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleExecuteQuery = () => {
+    if (sqlQuery.trim()) {
+      sqlMutation.mutate(sqlQuery);
+    }
+  };
 
   const handleRefreshCache = () => {
     queryClient.invalidateQueries();
@@ -162,6 +197,98 @@ export default function Developer() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+          <div>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Terminal className="h-4 w-4" />
+              SQL Console
+            </CardTitle>
+            <CardDescription>Execute SQL queries against the database</CardDescription>
+          </div>
+          <Button 
+            onClick={handleExecuteQuery} 
+            disabled={sqlMutation.isPending || !sqlQuery.trim()}
+            data-testid="button-execute-sql"
+          >
+            {sqlMutation.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Play className="h-4 w-4 mr-2" />
+            )}
+            Execute
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Textarea
+            value={sqlQuery}
+            onChange={(e) => setSqlQuery(e.target.value)}
+            placeholder="Enter SQL query..."
+            className="font-mono text-sm min-h-[100px]"
+            data-testid="input-sql-query"
+          />
+          
+          {sqlError && (
+            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive font-mono">{sqlError}</p>
+            </div>
+          )}
+
+          {sqlResult && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {sqlResult.rowCount ?? sqlResult.rows.length} row(s) returned
+                </p>
+                {sqlResult.fields && (
+                  <p className="text-xs text-muted-foreground">
+                    Columns: {sqlResult.fields.map(f => f.name).join(", ")}
+                  </p>
+                )}
+              </div>
+              <ScrollArea className="h-[300px] rounded-md border">
+                <div className="p-4">
+                  {sqlResult.rows.length > 0 ? (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b">
+                          {sqlResult.fields?.map((field) => (
+                            <th key={field.name} className="text-left p-2 font-medium">
+                              {field.name}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="font-mono">
+                        {sqlResult.rows.map((row, i) => (
+                          <tr key={i} className="border-b border-border/50">
+                            {sqlResult.fields?.map((field) => (
+                              <td key={field.name} className="p-2 max-w-[200px] truncate">
+                                {row[field.name] === null ? (
+                                  <span className="text-muted-foreground italic">null</span>
+                                ) : typeof row[field.name] === "object" ? (
+                                  JSON.stringify(row[field.name])
+                                ) : (
+                                  String(row[field.name])
+                                )}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Query executed successfully. No rows returned.
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
