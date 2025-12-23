@@ -9,6 +9,7 @@ import {
   Settings,
   MessageCircle,
   CreditCard,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -63,6 +64,11 @@ const mainNavItems = [
 
 
 const settingsNavItems = [
+  {
+    title: "QA Testing",
+    url: "/qa-testing",
+    icon: ClipboardCheck,
+  },
   {
     title: "Billing",
     url: "/billing",

@@ -18,6 +18,7 @@ import Email from "@/pages/email";
 import Settings from "@/pages/settings";
 import ChatPage from "@/pages/chat";
 import BillingPage from "@/pages/billing";
+import QATestingPage from "@/pages/qa-testing";
 
 function Router() {
   return (
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/chat" component={ChatPage} />
       <Route path="/billing" component={BillingPage} />
       <Route path="/settings" component={Settings} />
+      <Route path="/qa-testing" component={QATestingPage} />
       <Route component={NotFound} />
     </Switch>
   );
