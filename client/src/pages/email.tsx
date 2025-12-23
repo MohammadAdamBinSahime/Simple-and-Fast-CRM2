@@ -37,10 +37,17 @@ import {
   Trash2,
   Loader2,
   CheckCircle2,
-  AlertCircle,
   XCircle,
 } from "lucide-react";
-import type { ScheduledEmail, EmailTemplate, Contact, EmailAccount } from "@shared/schema";
+import type { ScheduledEmail, EmailTemplate, Contact } from "@shared/schema";
+
+interface UserInfo {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
+}
 
 export default function Email() {
   const { toast } = useToast();
@@ -48,6 +55,10 @@ export default function Email() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("09:00");
+
+  const { data: user } = useQuery<UserInfo>({
+    queryKey: ["/api/me"],
+  });
 
   const { data: scheduledEmails = [], isLoading: emailsLoading } = useQuery<ScheduledEmail[]>({
     queryKey: ["/api/scheduled-emails"],
@@ -61,17 +72,13 @@ export default function Email() {
     queryKey: ["/api/contacts"],
   });
 
-  const { data: emailAccounts = [] } = useQuery<EmailAccount[]>({
-    queryKey: ["/api/email-accounts"],
-  });
-
   const createEmail = useMutation({
     mutationFn: async (data: {
       toEmail: string;
       subject: string;
       body: string;
       contactId?: string;
-      emailAccountId?: string;
+      fromEmail?: string;
       scheduledAt?: Date;
       status: string;
     }) => {
@@ -128,7 +135,6 @@ export default function Email() {
     const subject = formData.get("subject") as string;
     const body = formData.get("body") as string;
     const contactId = formData.get("contactId") as string;
-    const emailAccountId = formData.get("emailAccountId") as string;
 
     let scheduledAt: Date | undefined;
     if (selectedDate) {
@@ -142,7 +148,7 @@ export default function Email() {
       subject,
       body,
       contactId: contactId || undefined,
-      emailAccountId: emailAccountId || undefined,
+      fromEmail: user?.email || undefined,
       scheduledAt,
       status: scheduledAt ? "scheduled" : "draft",
     });
@@ -175,7 +181,7 @@ export default function Email() {
 
   return (
     <div className="p-8 space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold" data-testid="text-page-title">Email</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -270,23 +276,13 @@ export default function Email() {
                       </SelectContent>
                     </Select>
                   </div>
-                  {emailAccounts.length > 0 && (
-                    <div className="space-y-2">
-                      <Label htmlFor="emailAccountId">Send From</Label>
-                      <Select name="emailAccountId">
-                        <SelectTrigger data-testid="select-email-account">
-                          <SelectValue placeholder="Select account" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {emailAccounts.map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              {account.email} ({account.provider})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-2">
+                    <Label>Send From</Label>
+                    <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{user?.email || "Loading..."}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -395,23 +391,6 @@ export default function Email() {
           </Dialog>
         </div>
       </div>
-
-      {emailAccounts.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-8">
-            <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Email Accounts Connected</h3>
-            <p className="text-muted-foreground text-sm text-center mb-4">
-              Connect your Gmail, Outlook, or other email provider to start sending emails
-            </p>
-            <Button variant="outline" asChild>
-              <a href="/settings" data-testid="link-connect-email">
-                Go to Settings to Connect
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       <Tabs defaultValue="scheduled" className="space-y-6">
         <TabsList>
