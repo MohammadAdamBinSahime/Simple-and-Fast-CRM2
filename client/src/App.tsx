@@ -136,7 +136,7 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="crm-theme">
+      <ThemeProvider defaultTheme="light" storageKey="crm-theme">
         <TooltipProvider>
           <AppContent />
           <Toaster />

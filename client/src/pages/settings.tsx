@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Monitor, Mail, Trash2, Loader2 } from "lucide-react";
+import { Moon, Sun, Mail, Trash2, Loader2 } from "lucide-react";
 import { SiGmail } from "react-icons/si";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -35,7 +35,6 @@ export default function Settings() {
   const themeOptions = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
-    { value: "system", label: "System", icon: Monitor },
   ] as const;
 
   return (
