@@ -38,8 +38,11 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Check,
+  User,
 } from "lucide-react";
-import type { ScheduledEmail, EmailTemplate, Contact } from "@shared/schema";
+import { SiGmail } from "react-icons/si";
+import type { ScheduledEmail, EmailTemplate, Contact, EmailAccount } from "@shared/schema";
 
 interface UserInfo {
   id: string;
@@ -53,11 +56,17 @@ export default function Email() {
   const { toast } = useToast();
   const [composeOpen, setComposeOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [addEmailOpen, setAddEmailOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("09:00");
+  const [selectedFromEmail, setSelectedFromEmail] = useState<string>("");
 
   const { data: user } = useQuery<UserInfo>({
     queryKey: ["/api/me"],
+  });
+
+  const { data: emailAccounts = [], isLoading: accountsLoading } = useQuery<EmailAccount[]>({
+    queryKey: ["/api/email-accounts"],
   });
 
   const { data: scheduledEmails = [], isLoading: emailsLoading } = useQuery<ScheduledEmail[]>({
@@ -70,6 +79,30 @@ export default function Email() {
 
   const { data: contacts = [] } = useQuery<Contact[]>({
     queryKey: ["/api/contacts"],
+  });
+
+  const addEmailAccount = useMutation({
+    mutationFn: async (data: { email: string; provider: string }) => {
+      return apiRequest("POST", "/api/email-accounts", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-accounts"] });
+      setAddEmailOpen(false);
+      toast({ title: "Email account added" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add email account", variant: "destructive" });
+    },
+  });
+
+  const deleteEmailAccount = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/email-accounts/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-accounts"] });
+      toast({ title: "Email account removed" });
+    },
   });
 
   const createEmail = useMutation({
@@ -128,6 +161,13 @@ export default function Email() {
     },
   });
 
+  const allEmails = [
+    ...(user?.email ? [{ id: "primary", email: user.email, provider: "replit", isPrimary: true }] : []),
+    ...emailAccounts.map(acc => ({ ...acc, isPrimary: false })),
+  ];
+
+  const currentFromEmail = selectedFromEmail || user?.email || "";
+
   const handleComposeSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -148,7 +188,7 @@ export default function Email() {
       subject,
       body,
       contactId: contactId || undefined,
-      fromEmail: user?.email || undefined,
+      fromEmail: currentFromEmail,
       scheduledAt,
       status: scheduledAt ? "scheduled" : "draft",
     });
@@ -161,6 +201,15 @@ export default function Email() {
       name: formData.get("name") as string,
       subject: formData.get("subject") as string,
       body: formData.get("body") as string,
+    });
+  };
+
+  const handleAddEmailSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    addEmailAccount.mutate({
+      email: formData.get("email") as string,
+      provider: formData.get("provider") as string,
     });
   };
 
@@ -179,6 +228,19 @@ export default function Email() {
     }
   };
 
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case "gmail":
+        return <SiGmail className="h-4 w-4 text-red-500" />;
+      case "outlook":
+        return <Mail className="h-4 w-4 text-blue-500" />;
+      case "replit":
+        return <User className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return <Mail className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
   return (
     <div className="p-8 space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -187,13 +249,6 @@ export default function Email() {
           <p className="text-muted-foreground text-sm mt-1">
             Compose, schedule, and automate your email communications
           </p>
-          {user?.email && (
-            <div className="flex items-center gap-2 mt-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Sending from:</span>
-              <span className="text-sm font-medium" data-testid="text-current-email">{user.email}</span>
-            </div>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
@@ -285,10 +340,22 @@ export default function Email() {
                   </div>
                   <div className="space-y-2">
                     <Label>Send From</Label>
-                    <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{user?.email || "Loading..."}</span>
-                    </div>
+                    <Select value={currentFromEmail} onValueChange={setSelectedFromEmail}>
+                      <SelectTrigger data-testid="select-from-email">
+                        <SelectValue placeholder="Select email account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allEmails.map((acc) => (
+                          <SelectItem key={acc.id} value={acc.email}>
+                            <div className="flex items-center gap-2">
+                              {getProviderIcon(acc.provider)}
+                              <span>{acc.email}</span>
+                              {acc.isPrimary && <Badge variant="secondary" className="text-xs">Primary</Badge>}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -399,8 +466,12 @@ export default function Email() {
         </div>
       </div>
 
-      <Tabs defaultValue="scheduled" className="space-y-6">
+      <Tabs defaultValue="accounts" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="accounts" data-testid="tab-accounts">
+            <Mail className="h-4 w-4 mr-2" />
+            Email Accounts ({allEmails.length})
+          </TabsTrigger>
           <TabsTrigger value="scheduled" data-testid="tab-scheduled">
             <Clock className="h-4 w-4 mr-2" />
             Scheduled ({scheduledEmails.length})
@@ -410,6 +481,143 @@ export default function Email() {
             Templates ({templates.length})
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="accounts" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Connected Email Accounts</CardTitle>
+              <CardDescription>
+                Manage your email accounts for sending emails
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {accountsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {user?.email && (
+                    <div
+                      className="flex items-center justify-between gap-2 p-3 rounded-md border"
+                      data-testid="email-account-primary"
+                    >
+                      <div className="flex items-center gap-3">
+                        <User className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">Replit Account</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Primary</Badge>
+                        <Check className="h-4 w-4 text-green-500" />
+                      </div>
+                    </div>
+                  )}
+                  {emailAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between gap-2 p-3 rounded-md border"
+                      data-testid={`email-account-${account.id}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {getProviderIcon(account.provider)}
+                        <div>
+                          <p className="text-sm font-medium">{account.email}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{account.provider}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteEmailAccount.mutate(account.id)}
+                        disabled={deleteEmailAccount.isPending}
+                        data-testid={`button-remove-email-${account.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-4 border-t">
+                <Label className="text-sm font-medium mb-3 block">Add Email Account</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Dialog open={addEmailOpen} onOpenChange={setAddEmailOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="button-add-email">
+                        <Plus className="h-4 w-4" />
+                        Add Email
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Email Account</DialogTitle>
+                        <DialogDescription>
+                          Add a secondary email address for sending emails
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddEmailSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="add-email">Email Address</Label>
+                          <Input
+                            id="add-email"
+                            name="email"
+                            type="email"
+                            placeholder="your@email.com"
+                            data-testid="input-add-email"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="add-provider">Provider</Label>
+                          <Select name="provider" defaultValue="other">
+                            <SelectTrigger data-testid="select-provider">
+                              <SelectValue placeholder="Select provider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gmail">
+                                <div className="flex items-center gap-2">
+                                  <SiGmail className="h-4 w-4 text-red-500" />
+                                  Gmail
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="outlook">
+                                <div className="flex items-center gap-2">
+                                  <SiMicrosoft className="h-4 w-4 text-blue-500" />
+                                  Outlook
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="other">
+                                <div className="flex items-center gap-2">
+                                  <Mail className="h-4 w-4" />
+                                  Other
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button type="button" variant="outline" onClick={() => setAddEmailOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={addEmailAccount.isPending} data-testid="button-save-email">
+                            {addEmailAccount.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Add Account
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  OAuth integration for Gmail and Outlook coming soon. For now, you can add email addresses manually.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="scheduled" className="space-y-4">
           {emailsLoading ? (
