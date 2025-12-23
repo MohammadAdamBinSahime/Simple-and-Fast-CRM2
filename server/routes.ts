@@ -829,6 +829,36 @@ export async function registerRoutes(
         userId: getUserId(req)!,
       });
       const email = await storage.createScheduledEmail(data);
+      
+      // If status is "sending", send the email immediately via Resend
+      if (data.status === "sending" && !data.scheduledAt) {
+        try {
+          const { sendEmail } = await import("./resend");
+          await sendEmail({
+            to: data.toEmail,
+            cc: data.ccEmail || undefined,
+            subject: data.subject,
+            html: data.body.replace(/\n/g, '<br>'),
+            text: data.body,
+          });
+          // Update status to sent
+          await storage.updateScheduledEmail(email.id, { 
+            status: "sent",
+            sentAt: new Date()
+          });
+          const updatedEmail = await storage.getScheduledEmail(email.id);
+          return res.status(201).json(updatedEmail);
+        } catch (sendError: any) {
+          console.error("Error sending email:", sendError);
+          await storage.updateScheduledEmail(email.id, { 
+            status: "failed",
+            errorMessage: sendError.message || "Failed to send email"
+          });
+          const updatedEmail = await storage.getScheduledEmail(email.id);
+          return res.status(201).json(updatedEmail);
+        }
+      }
+      
       res.status(201).json(email);
     } catch (error) {
       if (error instanceof z.ZodError) {
