@@ -9,8 +9,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   Code, Database, Server, Users, Building2, HandshakeIcon, CheckSquare, 
   FileText, Tag, RefreshCw, Play, Loader2, Terminal, Table, Key, 
-  Link2, ChevronRight, Hash, Type, Calendar, ToggleLeft, Layers
+  Link2, Hash, Type, Calendar, ToggleLeft, Layers, AlertCircle, 
+  AlertTriangle, Info, Bug, Trash2, ScrollText
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,6 +50,23 @@ interface SqlResult {
   fields: { name: string; dataTypeID: number }[];
 }
 
+interface LogEntry {
+  id: string;
+  level: string;
+  message: string;
+  source: string | null;
+  metadata: string | null;
+  userId: string | null;
+  requestId: string | null;
+  stack: string | null;
+  createdAt: string;
+}
+
+interface LogsData {
+  logs: LogEntry[];
+  stats: { level: string; count: number }[];
+}
+
 function getTypeIcon(type: string) {
   const lowerType = type.toLowerCase();
   if (lowerType.includes("int") || lowerType.includes("numeric") || lowerType.includes("decimal")) {
@@ -65,6 +84,36 @@ function getTypeIcon(type: string) {
   return <Layers className="h-3 w-3" />;
 }
 
+function getLogLevelIcon(level: string) {
+  switch (level) {
+    case "error":
+      return <AlertCircle className="h-4 w-4 text-destructive" />;
+    case "warn":
+      return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+    case "info":
+      return <Info className="h-4 w-4 text-blue-500" />;
+    case "debug":
+      return <Bug className="h-4 w-4 text-muted-foreground" />;
+    default:
+      return <Info className="h-4 w-4" />;
+  }
+}
+
+function getLogLevelColor(level: string) {
+  switch (level) {
+    case "error":
+      return "bg-destructive/10 text-destructive border-destructive/20";
+    case "warn":
+      return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20";
+    case "info":
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+    case "debug":
+      return "bg-muted text-muted-foreground border-border";
+    default:
+      return "bg-muted text-foreground border-border";
+  }
+}
+
 export default function Developer() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -73,6 +122,8 @@ export default function Developer() {
   const [sqlError, setSqlError] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("editor");
+  const [logFilter, setLogFilter] = useState<string>("all");
+  const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
   const { data: contacts } = useQuery<Contact[]>({ queryKey: ["/api/contacts"] });
   const { data: companies } = useQuery<Company[]>({ queryKey: ["/api/companies"] });
@@ -83,6 +134,33 @@ export default function Developer() {
   const { data: schemaData, isLoading: schemaLoading } = useQuery<SchemaData>({
     queryKey: ["/api/developer/schema"],
     enabled: user?.email === DEVELOPER_EMAIL,
+  });
+
+  const logsQueryUrl = logFilter !== "all" 
+    ? `/api/developer/logs?level=${logFilter}` 
+    : "/api/developer/logs";
+  
+  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery<LogsData>({
+    queryKey: ["/api/developer/logs", logFilter],
+    queryFn: async () => {
+      const response = await fetch(logsQueryUrl, { credentials: "include" });
+      if (!response.ok) throw new Error("Failed to fetch logs");
+      return response.json();
+    },
+    enabled: user?.email === DEVELOPER_EMAIL,
+  });
+
+  const clearLogsMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/developer/logs");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/developer/logs"] });
+      toast({ title: "Logs cleared", description: "All logs have been deleted." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to clear logs", description: error.message, variant: "destructive" });
+    },
   });
 
   if (user?.email !== DEVELOPER_EMAIL) {
@@ -232,6 +310,15 @@ export default function Developer() {
               <TabsTrigger value="schema" className="gap-2" data-testid="tab-schema">
                 <Table className="h-3.5 w-3.5" />
                 Table Definition
+              </TabsTrigger>
+              <TabsTrigger value="logs" className="gap-2" data-testid="tab-logs">
+                <ScrollText className="h-3.5 w-3.5" />
+                Logs
+                {logsData?.stats && logsData.stats.find(s => s.level === "error")?.count ? (
+                  <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0">
+                    {logsData.stats.find(s => s.level === "error")?.count}
+                  </Badge>
+                ) : null}
               </TabsTrigger>
               <TabsTrigger value="info" className="gap-2" data-testid="tab-info">
                 <Server className="h-3.5 w-3.5" />
@@ -443,6 +530,149 @@ export default function Developer() {
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="logs" className="flex-1 m-0 p-0 overflow-hidden flex flex-col">
+            <div className="p-4 border-b bg-muted/20 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Select value={logFilter} onValueChange={setLogFilter}>
+                  <SelectTrigger className="w-[140px]" data-testid="select-log-filter">
+                    <SelectValue placeholder="Filter by level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    <SelectItem value="error">Errors</SelectItem>
+                    <SelectItem value="warn">Warnings</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                    <SelectItem value="debug">Debug</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {logsData?.stats && (
+                  <div className="flex items-center gap-2 text-xs">
+                    {logsData.stats.map((stat) => (
+                      <Badge
+                        key={stat.level}
+                        variant="outline"
+                        className={cn("text-[10px]", getLogLevelColor(stat.level))}
+                      >
+                        {stat.level}: {stat.count}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchLogs()}
+                  data-testid="button-refresh-logs"
+                >
+                  <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                  Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clearLogsMutation.mutate()}
+                  disabled={clearLogsMutation.isPending || !logsData?.logs.length}
+                  data-testid="button-clear-logs"
+                >
+                  {clearLogsMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  )}
+                  Clear All
+                </Button>
+              </div>
+            </div>
+
+            <ScrollArea className="flex-1">
+              {logsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : !logsData?.logs.length ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <ScrollText className="h-12 w-12 mb-3 opacity-20" />
+                  <p className="text-sm">No logs recorded yet</p>
+                  <p className="text-xs mt-1">Logs will appear here when errors or events occur</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {logsData.logs.map((log) => (
+                    <div
+                      key={log.id}
+                      className={cn(
+                        "p-3 text-sm cursor-pointer transition-colors hover-elevate",
+                        expandedLog === log.id && "bg-muted/30"
+                      )}
+                      onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)}
+                      data-testid={`log-entry-${log.id}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5">{getLogLevelIcon(log.level)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge
+                              variant="outline"
+                              className={cn("text-[10px] uppercase", getLogLevelColor(log.level))}
+                            >
+                              {log.level}
+                            </Badge>
+                            {log.source && (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {log.source}
+                              </span>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {new Date(log.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="mt-1 font-mono text-xs break-all">{log.message}</p>
+                          
+                          {expandedLog === log.id && (
+                            <div className="mt-3 space-y-2 text-xs">
+                              {log.userId && (
+                                <div className="flex gap-2">
+                                  <span className="text-muted-foreground">User ID:</span>
+                                  <span className="font-mono">{log.userId}</span>
+                                </div>
+                              )}
+                              {log.requestId && (
+                                <div className="flex gap-2">
+                                  <span className="text-muted-foreground">Request ID:</span>
+                                  <span className="font-mono">{log.requestId}</span>
+                                </div>
+                              )}
+                              {log.metadata && (
+                                <div>
+                                  <span className="text-muted-foreground">Metadata:</span>
+                                  <pre className="mt-1 p-2 bg-muted rounded-md overflow-x-auto text-[10px]">
+                                    {JSON.stringify(JSON.parse(log.metadata), null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                              {log.stack && (
+                                <div>
+                                  <span className="text-muted-foreground">Stack Trace:</span>
+                                  <pre className="mt-1 p-2 bg-muted rounded-md overflow-x-auto text-[10px] text-destructive">
+                                    {log.stack}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value="info" className="flex-1 m-0 overflow-auto">
