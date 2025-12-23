@@ -830,16 +830,16 @@ export async function registerRoutes(
       });
       const email = await storage.createScheduledEmail(data);
       
-      // If status is "sending", send the email immediately via Resend
+      // If status is "sending", send the email immediately via Gmail
       if (data.status === "sending" && !data.scheduledAt) {
         try {
-          const { sendEmail } = await import("./resend");
-          await sendEmail({
+          const { sendEmailViaGmail } = await import("./gmail");
+          await sendEmailViaGmail({
             to: data.toEmail,
             cc: data.ccEmail || undefined,
             subject: data.subject,
-            html: data.body.replace(/\n/g, '<br>'),
-            text: data.body,
+            body: data.body,
+            isHtml: false,
           });
           // Update status to sent
           await storage.updateScheduledEmail(email.id, { 
