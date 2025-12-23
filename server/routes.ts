@@ -20,7 +20,7 @@ import {
 import { z } from "zod";
 
 // UAT Mode - Set to true to bypass authentication for testing
-const UAT_MODE = true;
+const UAT_MODE = false;
 const UAT_USER_ID = "uat-test-user";
 
 // Helper to check if user is authenticated (respects UAT mode)

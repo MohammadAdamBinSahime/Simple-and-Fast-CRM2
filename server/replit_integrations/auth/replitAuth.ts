@@ -132,7 +132,7 @@ export async function setupAuth(app: Express) {
 }
 
 // UAT Mode - Set to true to bypass authentication for testing
-const UAT_MODE = true;
+const UAT_MODE = false;
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   // In UAT mode, bypass authentication entirely

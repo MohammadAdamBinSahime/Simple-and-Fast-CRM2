@@ -75,9 +75,11 @@ function AuthenticatedApp() {
   useEffect(() => {
     if (isLoading) return;
     
-    const trialExpired = trial && !trial.isTrialActive;
+    // Only redirect if we have valid trial data and trial has expired
+    const trialExpired = trial && !trial.isTrialActive && !trial.hasSubscription;
     const hasActiveSubscription = subscription && subscription.status === "active";
     
+    // Redirect to billing if trial expired and no active subscription
     if (trialExpired && !hasActiveSubscription && location !== "/billing") {
       setLocation("/billing");
     }
