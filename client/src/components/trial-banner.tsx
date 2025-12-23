@@ -26,11 +26,9 @@ export function TrialBanner() {
       >
         <Gift className="h-4 w-4 text-primary" />
         <span>
-          <span className="font-medium">{trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"}</span> left in your free trial
+          <span className="font-medium">{trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"}</span> left in your free trial.
+          <span className="text-muted-foreground ml-1">Payment required after trial ends (RM59.99/month).</span>
         </span>
-        <Link href="/billing" className="text-primary font-medium underline-offset-4 hover:underline">
-          Subscribe now
-        </Link>
       </div>
     );
   }
