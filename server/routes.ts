@@ -101,6 +101,7 @@ const updateContactSchema = z.object({
   facebookUrl: z.string().nullable().optional(),
   whatsappNumber: z.string().nullable().optional(),
   photoUrl: z.string().nullable().optional(),
+  videoUrl: z.string().nullable().optional(),
 });
 
 const updateCompanySchema = z.object({
@@ -111,6 +112,7 @@ const updateCompanySchema = z.object({
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   logoUrl: z.string().nullable().optional(),
+  videoUrl: z.string().nullable().optional(),
 });
 
 const updateDealSchema = z.object({
