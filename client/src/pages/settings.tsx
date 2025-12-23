@@ -3,8 +3,8 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Sun, Monitor, Mail, Trash2, Loader2, ExternalLink } from "lucide-react";
-import { SiGmail, SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
+import { Moon, Sun, Monitor, Mail, Trash2, Loader2 } from "lucide-react";
+import { SiGmail } from "react-icons/si";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -48,39 +48,6 @@ export default function Settings() {
       </div>
 
       <div className="grid gap-6 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Appearance</CardTitle>
-            <CardDescription>
-              Customize how the application looks on your device
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label className="text-sm font-medium mb-3 block">Theme</Label>
-              <div className="flex gap-2">
-                {themeOptions.map((option) => {
-                  const Icon = option.icon;
-                  return (
-                    <Button
-                      key={option.value}
-                      variant={theme === option.value ? "secondary" : "outline"}
-                      className={cn(
-                        "flex-1 flex flex-col items-center gap-2 h-auto py-4"
-                      )}
-                      onClick={() => setTheme(option.value)}
-                      data-testid={`button-theme-${option.value}`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-sm">{option.label}</span>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-medium">Email Accounts</CardTitle>
@@ -165,98 +132,33 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-medium">Social Integrations</CardTitle>
+            <CardTitle className="text-lg font-medium">Appearance</CardTitle>
             <CardDescription>
-              Quick actions to connect with contacts via social platforms
+              Customize how the application looks on your device
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Social integration buttons are available on each contact card. You can add LinkedIn, Facebook, and WhatsApp links when creating or editing contacts.
-            </p>
-            <div className="grid grid-cols-3 gap-4 pt-2">
-              <div className="flex items-center gap-3 p-3 rounded-md border">
-                <SiWhatsapp className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="text-sm font-medium">WhatsApp</p>
-                  <p className="text-xs text-muted-foreground">Direct messaging</p>
-                </div>
+          <CardContent className="space-y-6">
+            <div>
+              <Label className="text-sm font-medium mb-3 block">Theme</Label>
+              <div className="flex gap-2">
+                {themeOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <Button
+                      key={option.value}
+                      variant={theme === option.value ? "secondary" : "outline"}
+                      className={cn(
+                        "flex-1 flex flex-col items-center gap-2 h-auto py-4"
+                      )}
+                      onClick={() => setTheme(option.value)}
+                      data-testid={`button-theme-${option.value}`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-sm">{option.label}</span>
+                    </Button>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-md border">
-                <SiLinkedin className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm font-medium">LinkedIn</p>
-                  <p className="text-xs text-muted-foreground">Profile links</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 rounded-md border">
-                <SiFacebook className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-sm font-medium">Facebook</p>
-                  <p className="text-xs text-muted-foreground">Profile links</p>
-                </div>
-              </div>
-            </div>
-            <div className="pt-4 border-t">
-              <p className="text-xs text-muted-foreground">
-                To use social integrations, add the contact's social media links in the contact form. Click the social icons on contact rows to open their profiles directly.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">About</CardTitle>
-            <CardDescription>
-              Information about this CRM application
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm">
-              <p className="text-muted-foreground">Version</p>
-              <p className="font-medium">1.0.0</p>
-            </div>
-            <div className="pt-4 border-t">
-              <p className="text-xs text-muted-foreground">
-                A modern, Notion-inspired CRM application for managing contacts,
-                companies, deals, and tasks. Built with React, TypeScript, and
-                PostgreSQL.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Keyboard Shortcuts</CardTitle>
-            <CardDescription>
-              Quick actions to navigate the application
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                { keys: ["⌘", "K"], description: "Open quick search" },
-                { keys: ["⌘", "N"], description: "Create new item" },
-                { keys: ["⌘", "/"], description: "Toggle sidebar" },
-              ].map((shortcut, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {shortcut.description}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {shortcut.keys.map((key, j) => (
-                      <kbd
-                        key={j}
-                        className="px-2 py-1 text-xs font-mono bg-muted rounded border"
-                      >
-                        {key}
-                      </kbd>
-                    ))}
-                  </div>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
