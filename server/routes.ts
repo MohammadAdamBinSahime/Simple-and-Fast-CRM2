@@ -1322,9 +1322,136 @@ export async function registerRoutes(
     }
   });
 
-  // Developer-only SQL endpoint
+  // Developer-only endpoints
   const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
-  
+
+  // Get database schema info
+  app.get("/api/developer/schema", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user || user.email !== DEVELOPER_EMAIL) {
+        return res.status(403).json({ error: "Access denied. Developer only." });
+      }
+
+      // Get all tables
+      const tablesResult = await pool.query(`
+        SELECT table_name, table_schema, table_type
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+        ORDER BY table_name
+      `);
+
+      // Get all columns for each table
+      const columnsResult = await pool.query(`
+        SELECT 
+          table_name,
+          column_name,
+          data_type,
+          is_nullable,
+          column_default,
+          character_maximum_length,
+          numeric_precision
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+        ORDER BY table_name, ordinal_position
+      `);
+
+      // Get primary keys
+      const primaryKeysResult = await pool.query(`
+        SELECT 
+          tc.table_name,
+          kcu.column_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu 
+          ON tc.constraint_name = kcu.constraint_name
+        WHERE tc.constraint_type = 'PRIMARY KEY'
+          AND tc.table_schema = 'public'
+      `);
+
+      // Get foreign keys
+      const foreignKeysResult = await pool.query(`
+        SELECT
+          tc.table_name,
+          kcu.column_name,
+          ccu.table_name AS foreign_table_name,
+          ccu.column_name AS foreign_column_name
+        FROM information_schema.table_constraints AS tc
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+        JOIN information_schema.constraint_column_usage AS ccu
+          ON ccu.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = 'public'
+      `);
+
+      // Get row counts for each table
+      const rowCountsResult = await pool.query(`
+        SELECT relname as table_name, n_live_tup as row_count
+        FROM pg_stat_user_tables
+        WHERE schemaname = 'public'
+      `);
+
+      const primaryKeys = new Map<string, Set<string>>();
+      primaryKeysResult.rows.forEach(row => {
+        if (!primaryKeys.has(row.table_name)) {
+          primaryKeys.set(row.table_name, new Set());
+        }
+        primaryKeys.get(row.table_name)!.add(row.column_name);
+      });
+
+      const foreignKeys = new Map<string, Map<string, { table: string; column: string }>>();
+      foreignKeysResult.rows.forEach(row => {
+        if (!foreignKeys.has(row.table_name)) {
+          foreignKeys.set(row.table_name, new Map());
+        }
+        foreignKeys.get(row.table_name)!.set(row.column_name, {
+          table: row.foreign_table_name,
+          column: row.foreign_column_name,
+        });
+      });
+
+      const rowCounts = new Map<string, number>();
+      rowCountsResult.rows.forEach(row => {
+        rowCounts.set(row.table_name, parseInt(row.row_count) || 0);
+      });
+
+      // Group columns by table
+      const tables = tablesResult.rows.map(table => {
+        const tableColumns = columnsResult.rows
+          .filter(col => col.table_name === table.table_name)
+          .map(col => ({
+            name: col.column_name,
+            type: col.data_type,
+            nullable: col.is_nullable === 'YES',
+            default: col.column_default,
+            maxLength: col.character_maximum_length,
+            precision: col.numeric_precision,
+            isPrimaryKey: primaryKeys.get(table.table_name)?.has(col.column_name) || false,
+            foreignKey: foreignKeys.get(table.table_name)?.get(col.column_name) || null,
+          }));
+
+        return {
+          name: table.table_name,
+          schema: table.table_schema,
+          type: table.table_type,
+          columns: tableColumns,
+          rowCount: rowCounts.get(table.table_name) || 0,
+        };
+      });
+
+      res.json({ tables });
+    } catch (error: any) {
+      console.error("Schema fetch error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch schema" });
+    }
+  });
+
+  // SQL query endpoint  
   app.post("/api/developer/sql", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);
