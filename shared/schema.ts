@@ -139,6 +139,19 @@ export const integrationAccounts = pgTable("integration_accounts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Developer logs table
+export const logs = pgTable("logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  level: text("level").notNull(), // error, warn, info, debug
+  message: text("message").notNull(),
+  source: text("source"), // API route, component, function name
+  metadata: text("metadata"), // JSON string with additional context
+  userId: text("user_id"),
+  requestId: text("request_id"),
+  stack: text("stack"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // AI Chat conversations
 export const conversations = pgTable("conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -325,6 +338,11 @@ export const insertIntegrationAccountSchema = createInsertSchema(integrationAcco
   contactsImported: true,
 });
 
+export const insertLogSchema = createInsertSchema(logs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type Company = typeof companies.$inferSelect;
@@ -362,6 +380,9 @@ export type ScheduledEmail = typeof scheduledEmails.$inferSelect;
 export type InsertIntegrationAccount = z.infer<typeof insertIntegrationAccountSchema>;
 export type IntegrationAccount = typeof integrationAccounts.$inferSelect;
 
+export type InsertLog = z.infer<typeof insertLogSchema>;
+export type Log = typeof logs.$inferSelect;
+
 export const insertConversationSchema = createInsertSchema(conversations).omit({
   id: true,
   createdAt: true,
@@ -391,6 +412,10 @@ export type EmailProvider = typeof emailProviders[number];
 // Email status types
 export const emailStatuses = ["draft", "scheduled", "sending", "sent", "failed"] as const;
 export type EmailStatus = typeof emailStatuses[number];
+
+// Log levels
+export const logLevels = ["error", "warn", "info", "debug"] as const;
+export type LogLevel = typeof logLevels[number];
 
 // Contact statuses
 export const contactStatuses = ["lead", "qualified", "customer", "inactive"] as const;
