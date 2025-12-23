@@ -56,6 +56,7 @@ export default function Email() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("09:00");
   const [recipientEmail, setRecipientEmail] = useState("");
+  const [ccEmail, setCcEmail] = useState("");
 
   const { data: user } = useQuery<UserInfo>({
     queryKey: ["/api/me"],
@@ -76,6 +77,7 @@ export default function Email() {
   const createEmail = useMutation({
     mutationFn: async (data: {
       toEmail: string;
+      ccEmail?: string;
       subject: string;
       body: string;
       fromEmail?: string;
@@ -89,6 +91,7 @@ export default function Email() {
       setComposeOpen(false);
       setSelectedDate(undefined);
       setRecipientEmail("");
+      setCcEmail("");
       toast({ 
         title: variables.scheduledAt ? "Email scheduled" : "Email sent", 
         description: variables.scheduledAt ? `Will be sent on ${format(variables.scheduledAt, "PPP")}` : "Your email is being sent now"
@@ -153,6 +156,7 @@ export default function Email() {
 
     createEmail.mutate({
       toEmail: recipientEmail,
+      ccEmail: ccEmail || undefined,
       subject,
       body,
       fromEmail: user?.email || undefined,
@@ -311,6 +315,39 @@ export default function Email() {
                       onChange={(e) => setRecipientEmail(e.target.value)}
                       className="flex-1"
                       data-testid="input-to-email"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cc (optional)</Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={contacts.find(c => c.email === ccEmail)?.id || ""} 
+                      onValueChange={(contactId) => {
+                        const contact = contacts.find(c => c.id === contactId);
+                        if (contact) setCcEmail(contact.email);
+                      }}
+                    >
+                      <SelectTrigger className="flex-1" data-testid="select-cc-contact">
+                        <SelectValue placeholder="Select from contacts..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contacts.filter(c => c.email).map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id}>
+                            {contact.firstName} {contact.lastName} ({contact.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-muted-foreground self-center text-sm">or</span>
+                    <Input
+                      type="email"
+                      placeholder="Type email..."
+                      value={ccEmail}
+                      onChange={(e) => setCcEmail(e.target.value)}
+                      className="flex-1"
+                      data-testid="input-cc-email"
                     />
                   </div>
                 </div>

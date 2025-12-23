@@ -176,6 +176,7 @@ export const scheduledEmails = pgTable("scheduled_emails", {
   emailAccountId: varchar("email_account_id").references(() => emailAccounts.id),
   contactId: varchar("contact_id").references(() => contacts.id),
   toEmail: text("to_email").notNull(),
+  ccEmail: text("cc_email"),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
   status: text("status").notNull().default("draft"),
