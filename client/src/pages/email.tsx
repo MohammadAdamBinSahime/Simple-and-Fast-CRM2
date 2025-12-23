@@ -39,7 +39,7 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import type { ScheduledEmail, EmailTemplate } from "@shared/schema";
+import type { ScheduledEmail, EmailTemplate, Contact } from "@shared/schema";
 
 interface UserInfo {
   id: string;
@@ -55,6 +55,7 @@ export default function Email() {
   const [templateOpen, setTemplateOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState("09:00");
+  const [recipientEmail, setRecipientEmail] = useState("");
 
   const { data: user } = useQuery<UserInfo>({
     queryKey: ["/api/me"],
@@ -66,6 +67,10 @@ export default function Email() {
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery<EmailTemplate[]>({
     queryKey: ["/api/email-templates"],
+  });
+
+  const { data: contacts = [] } = useQuery<Contact[]>({
+    queryKey: ["/api/contacts"],
   });
 
   const createEmail = useMutation({
@@ -83,6 +88,7 @@ export default function Email() {
       queryClient.invalidateQueries({ queryKey: ["/api/scheduled-emails"] });
       setComposeOpen(false);
       setSelectedDate(undefined);
+      setRecipientEmail("");
       toast({ 
         title: variables.scheduledAt ? "Email scheduled" : "Email sent", 
         description: variables.scheduledAt ? `Will be sent on ${format(variables.scheduledAt, "PPP")}` : "Your email is being sent now"
@@ -130,9 +136,13 @@ export default function Email() {
   const handleComposeSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const toEmail = formData.get("toEmail") as string;
     const subject = formData.get("subject") as string;
     const body = formData.get("body") as string;
+
+    if (!recipientEmail) {
+      toast({ title: "Please enter or select a recipient", variant: "destructive" });
+      return;
+    }
 
     let scheduledAt: Date | undefined;
     if (selectedDate) {
@@ -142,7 +152,7 @@ export default function Email() {
     }
 
     createEmail.mutate({
-      toEmail,
+      toEmail: recipientEmail,
       subject,
       body,
       fromEmail: user?.email || undefined,
@@ -273,14 +283,36 @@ export default function Email() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="toEmail">To</Label>
-                  <Input
-                    id="toEmail"
-                    name="toEmail"
-                    type="email"
-                    placeholder="recipient@example.com"
-                    data-testid="input-to-email"
-                  />
+                  <Label>To</Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={contacts.find(c => c.email === recipientEmail)?.id || ""} 
+                      onValueChange={(contactId) => {
+                        const contact = contacts.find(c => c.id === contactId);
+                        if (contact) setRecipientEmail(contact.email);
+                      }}
+                    >
+                      <SelectTrigger className="flex-1" data-testid="select-recipient-contact">
+                        <SelectValue placeholder="Select from contacts..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contacts.filter(c => c.email).map((contact) => (
+                          <SelectItem key={contact.id} value={contact.id}>
+                            {contact.firstName} {contact.lastName} ({contact.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-muted-foreground self-center text-sm">or</span>
+                    <Input
+                      type="email"
+                      placeholder="Type email..."
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      className="flex-1"
+                      data-testid="input-to-email"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
