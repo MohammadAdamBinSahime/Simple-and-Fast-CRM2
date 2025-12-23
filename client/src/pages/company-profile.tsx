@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -81,6 +81,9 @@ export default function CompanyProfile() {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
                 <Avatar className="h-24 w-24 mb-4">
+                  {company.logoUrl && company.logoUrl.trim().length > 0 && (
+                    <AvatarImage src={company.logoUrl} alt={company.name} />
+                  )}
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                     {initials}
                   </AvatarFallback>

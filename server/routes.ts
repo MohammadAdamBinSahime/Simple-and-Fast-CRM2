@@ -97,6 +97,10 @@ const updateContactSchema = z.object({
   jobTitle: z.string().nullable().optional(),
   companyId: z.string().nullable().optional(),
   status: z.string().optional(),
+  linkedinUrl: z.string().nullable().optional(),
+  facebookUrl: z.string().nullable().optional(),
+  whatsappNumber: z.string().nullable().optional(),
+  photoUrl: z.string().nullable().optional(),
 });
 
 const updateCompanySchema = z.object({
@@ -106,6 +110,7 @@ const updateCompanySchema = z.object({
   size: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
+  logoUrl: z.string().nullable().optional(),
 });
 
 const updateDealSchema = z.object({

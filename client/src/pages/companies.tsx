@@ -28,6 +28,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { DataTable, type Column } from "@/components/data-table";
+import { ImageUpload } from "@/components/image-upload";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Building2 } from "lucide-react";
 import {
   DropdownMenu,
@@ -92,6 +94,7 @@ export default function Companies() {
       size: "",
       address: "",
       phone: "",
+      logoUrl: "",
     },
   });
 
@@ -112,6 +115,7 @@ export default function Companies() {
         size: editingCompany.size || "",
         address: editingCompany.address || "",
         phone: editingCompany.phone || "",
+        logoUrl: editingCompany.logoUrl || "",
       });
     } else {
       form.reset({
@@ -121,6 +125,7 @@ export default function Companies() {
         size: "",
         address: "",
         phone: "",
+        logoUrl: "",
       });
     }
   }, [editingCompany, form]);
@@ -209,19 +214,25 @@ export default function Companies() {
     {
       key: "name",
       header: "Company",
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+      cell: (row) => {
+        const hasLogo = row.logoUrl && row.logoUrl.trim().length > 0;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8 rounded-md">
+              {hasLogo && <AvatarImage src={row.logoUrl!} alt={row.name} />}
+              <AvatarFallback className="rounded-md bg-muted">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium text-sm">{row.name}</p>
+              {row.domain && (
+                <p className="text-xs text-muted-foreground">{row.domain}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-sm">{row.name}</p>
-            {row.domain && (
-              <p className="text-xs text-muted-foreground">{row.domain}</p>
-            )}
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: "industry",
@@ -340,6 +351,24 @@ export default function Companies() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col items-center">
+                    <FormLabel>Company Logo</FormLabel>
+                    <FormControl>
+                      <ImageUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        type="company"
+                        fallbackText={form.watch("name")?.charAt(0) || "?"}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

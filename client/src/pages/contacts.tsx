@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/form";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload, Tags, MessageCircle } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload as UploadIcon, Tags, MessageCircle } from "lucide-react";
 import { SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
 import {
   DropdownMenu,
@@ -40,6 +40,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertContactSchema, contactStatuses, type Contact, type Company, type InsertContact, type Tag } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageUpload } from "@/components/image-upload";
 import { queryClient, apiRequest, getErrorMessage } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -156,6 +158,7 @@ export default function Contacts() {
       linkedinUrl: "",
       facebookUrl: "",
       whatsappNumber: "",
+      photoUrl: "",
     },
   });
 
@@ -180,6 +183,7 @@ export default function Contacts() {
         linkedinUrl: editingContact.linkedinUrl || "",
         facebookUrl: editingContact.facebookUrl || "",
         whatsappNumber: editingContact.whatsappNumber || "",
+        photoUrl: editingContact.photoUrl || "",
       });
     } else {
       form.reset({
@@ -193,6 +197,7 @@ export default function Contacts() {
         linkedinUrl: "",
         facebookUrl: "",
         whatsappNumber: "",
+        photoUrl: "",
       });
     }
   }, [editingContact, form]);
@@ -289,17 +294,23 @@ export default function Contacts() {
     {
       key: "name",
       header: "Name",
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-medium">
-            {row.firstName[0]}{row.lastName[0]}
+      cell: (row) => {
+        const hasPhoto = row.photoUrl && row.photoUrl.trim().length > 0;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              {hasPhoto && <AvatarImage src={row.photoUrl!} alt={`${row.firstName} ${row.lastName}`} />}
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                {row.firstName[0]}{row.lastName[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium text-sm">{row.firstName} {row.lastName}</p>
+              <p className="text-xs text-muted-foreground">{row.jobTitle || "-"}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-sm">{row.firstName} {row.lastName}</p>
-            <p className="text-xs text-muted-foreground">{row.jobTitle || "-"}</p>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: "email",
@@ -506,6 +517,24 @@ export default function Contacts() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="photoUrl"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col items-center">
+                    <FormLabel>Photo</FormLabel>
+                    <FormControl>
+                      <ImageUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        type="contact"
+                        fallbackText={form.watch("firstName")?.charAt(0) || "?"}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
