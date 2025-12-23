@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/form";
 import { DataTable, type Column } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload as UploadIcon, Tags, MessageCircle } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Upload as UploadIcon, Tags, MessageCircle, Video } from "lucide-react";
 import { SiFacebook, SiLinkedin, SiWhatsapp } from "react-icons/si";
 import {
   DropdownMenu,
@@ -300,6 +300,7 @@ export default function Contacts() {
       header: "Name",
       cell: (row) => {
         const hasPhoto = row.photoUrl && row.photoUrl.trim().length > 0;
+        const hasVideo = row.videoUrl && row.videoUrl.trim().length > 0;
         return (
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
@@ -309,7 +310,12 @@ export default function Contacts() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium text-sm">{row.firstName} {row.lastName}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm">{row.firstName} {row.lastName}</p>
+                {hasVideo && (
+                  <Video className="h-3.5 w-3.5 text-muted-foreground" data-testid={`icon-video-contact-${row.id}`} />
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">{row.jobTitle || "-"}</p>
             </div>
           </div>

@@ -31,7 +31,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { ImageUpload } from "@/components/image-upload";
 import { VideoUpload } from "@/components/video-upload";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Building2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Building2, Video } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -220,6 +220,7 @@ export default function Companies() {
       header: "Company",
       cell: (row) => {
         const hasLogo = row.logoUrl && row.logoUrl.trim().length > 0;
+        const hasVideo = row.videoUrl && row.videoUrl.trim().length > 0;
         return (
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8 rounded-md">
@@ -229,7 +230,12 @@ export default function Companies() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium text-sm">{row.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm">{row.name}</p>
+                {hasVideo && (
+                  <Video className="h-3.5 w-3.5 text-muted-foreground" data-testid={`icon-video-company-${row.id}`} />
+                )}
+              </div>
               {row.domain && (
                 <p className="text-xs text-muted-foreground">{row.domain}</p>
               )}
