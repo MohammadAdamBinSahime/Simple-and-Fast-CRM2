@@ -44,14 +44,18 @@ export async function sendEmail(options: {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
 }) {
   const { client, fromEmail } = await getUncachableResendClient();
   
+  // Use Resend's test domain for sending (works without domain verification)
+  // The actual user's email is set as reply-to so responses go to them
   const emailOptions: any = {
-    from: fromEmail,
+    from: 'Simple CRM <onboarding@resend.dev>',
     to: options.to,
     subject: options.subject,
     html: options.html,
+    replyTo: options.replyTo || fromEmail,
   };
   
   if (options.cc) {
@@ -63,5 +67,10 @@ export async function sendEmail(options: {
   }
   
   const result = await client.emails.send(emailOptions);
+  
+  if (result.error) {
+    throw new Error(result.error.message);
+  }
+  
   return result;
 }
