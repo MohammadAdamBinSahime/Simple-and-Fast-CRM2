@@ -75,10 +75,7 @@ export default function Email() {
       scheduledAt?: Date;
       status: string;
     }) => {
-      return apiRequest("/api/scheduled-emails", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/scheduled-emails", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/scheduled-emails"] });
@@ -92,10 +89,7 @@ export default function Email() {
 
   const createTemplate = useMutation({
     mutationFn: async (data: { name: string; subject: string; body: string }) => {
-      return apiRequest("/api/email-templates", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/email-templates", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/email-templates"] });
@@ -109,9 +103,7 @@ export default function Email() {
 
   const deleteEmail = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/scheduled-emails/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/scheduled-emails/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/scheduled-emails"] });
@@ -121,9 +113,7 @@ export default function Email() {
 
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/email-templates/${id}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/email-templates/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/email-templates"] });

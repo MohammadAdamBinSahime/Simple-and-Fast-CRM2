@@ -19,8 +19,24 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 
+// UAT Mode - Set to true to bypass authentication for testing
+const UAT_MODE = true;
+const UAT_USER_ID = "uat-test-user";
+
+// Helper to check if user is authenticated (respects UAT mode)
+function isUserAuthenticated(req: Request): boolean {
+  if (UAT_MODE) {
+    return true;
+  }
+  return !!req.user;
+}
+
 // Helper to extract user ID from session claims
 function getUserId(req: Request): string | null {
+  // In UAT mode, always return the test user ID
+  if (UAT_MODE) {
+    return UAT_USER_ID;
+  }
   const user = req.user as any;
   return user?.claims?.sub || null;
 }
@@ -29,6 +45,11 @@ function getUserId(req: Request): string | null {
 const TRIAL_DAYS = 7;
 
 async function requireActiveAccess(req: Request, res: any, next: any) {
+  // In UAT mode, bypass all access checks
+  if (UAT_MODE) {
+    return next();
+  }
+  
   try {
     const userId = getUserId(req);
     if (!userId) {
@@ -582,7 +603,7 @@ export async function registerRoutes(
   // Email accounts routes
   app.get("/api/email-accounts", async (req, res) => {
     try {
-      if (!req.user) {
+      if (!isUserAuthenticated(req)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const accounts = await storage.getEmailAccounts(getUserId(req)!);
@@ -595,7 +616,7 @@ export async function registerRoutes(
 
   app.get("/api/email-accounts/:id", async (req, res) => {
     try {
-      if (!req.user) {
+      if (!isUserAuthenticated(req)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const account = await storage.getEmailAccount(req.params.id);
@@ -649,7 +670,7 @@ export async function registerRoutes(
   // Email templates routes
   app.get("/api/email-templates", async (req, res) => {
     try {
-      if (!req.user) {
+      if (!isUserAuthenticated(req)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const templates = await storage.getEmailTemplates(getUserId(req)!);
@@ -662,7 +683,7 @@ export async function registerRoutes(
 
   app.get("/api/email-templates/:id", async (req, res) => {
     try {
-      if (!req.user) {
+      if (!isUserAuthenticated(req)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const template = await storage.getEmailTemplate(req.params.id);
@@ -733,7 +754,7 @@ export async function registerRoutes(
   // Scheduled emails routes
   app.get("/api/scheduled-emails", async (req, res) => {
     try {
-      if (!req.user) {
+      if (!isUserAuthenticated(req)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const emails = await storage.getScheduledEmails(getUserId(req)!);
@@ -746,7 +767,7 @@ export async function registerRoutes(
 
   app.get("/api/scheduled-emails/:id", async (req, res) => {
     try {
-      if (!req.user) {
+      if (!isUserAuthenticated(req)) {
         return res.status(401).json({ error: "Unauthorized" });
       }
       const email = await storage.getScheduledEmail(req.params.id);
