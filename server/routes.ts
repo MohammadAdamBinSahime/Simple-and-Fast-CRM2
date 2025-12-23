@@ -6,6 +6,7 @@ import { stripeService } from "./stripeService";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { isAuthenticated } from "./replit_integrations/auth";
 import { authStorage } from "./replit_integrations/auth/storage";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import {
   insertContactSchema,
   insertCompanySchema,
@@ -139,6 +140,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // Register object storage routes for file uploads
+  registerObjectStorageRoutes(app);
   
   // Get current user info
   app.get("/api/me", async (req, res) => {
