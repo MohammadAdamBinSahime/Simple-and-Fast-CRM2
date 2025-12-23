@@ -6,7 +6,6 @@ import {
   HandshakeIcon,
   CheckSquare,
   Mail,
-  Settings,
   LogOut,
   MessageCircle,
   CreditCard,
@@ -70,11 +69,6 @@ const settingsNavItems = [
     title: "Billing",
     url: "/billing",
     icon: CreditCard,
-  },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
   },
 ];
 
