@@ -42,6 +42,7 @@ import { insertContactSchema, contactStatuses, type Contact, type Company, type 
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImageUpload } from "@/components/image-upload";
+import { VideoUpload } from "@/components/video-upload";
 import { queryClient, apiRequest, getErrorMessage } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -159,6 +160,7 @@ export default function Contacts() {
       facebookUrl: "",
       whatsappNumber: "",
       photoUrl: "",
+      videoUrl: "",
     },
   });
 
@@ -184,6 +186,7 @@ export default function Contacts() {
         facebookUrl: editingContact.facebookUrl || "",
         whatsappNumber: editingContact.whatsappNumber || "",
         photoUrl: editingContact.photoUrl || "",
+        videoUrl: editingContact.videoUrl || "",
       });
     } else {
       form.reset({
@@ -198,6 +201,7 @@ export default function Contacts() {
         facebookUrl: "",
         whatsappNumber: "",
         photoUrl: "",
+        videoUrl: "",
       });
     }
   }, [editingContact, form]);
@@ -529,6 +533,22 @@ export default function Contacts() {
                         onChange={field.onChange}
                         type="contact"
                         fallbackText={form.watch("firstName")?.charAt(0) || "?"}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="videoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <VideoUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        label="Profile Video"
                       />
                     </FormControl>
                     <FormMessage />

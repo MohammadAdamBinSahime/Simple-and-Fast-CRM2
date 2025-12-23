@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/form";
 import { DataTable, type Column } from "@/components/data-table";
 import { ImageUpload } from "@/components/image-upload";
+import { VideoUpload } from "@/components/video-upload";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Building2 } from "lucide-react";
 import {
@@ -95,6 +96,7 @@ export default function Companies() {
       address: "",
       phone: "",
       logoUrl: "",
+      videoUrl: "",
     },
   });
 
@@ -116,6 +118,7 @@ export default function Companies() {
         address: editingCompany.address || "",
         phone: editingCompany.phone || "",
         logoUrl: editingCompany.logoUrl || "",
+        videoUrl: editingCompany.videoUrl || "",
       });
     } else {
       form.reset({
@@ -126,6 +129,7 @@ export default function Companies() {
         address: "",
         phone: "",
         logoUrl: "",
+        videoUrl: "",
       });
     }
   }, [editingCompany, form]);
@@ -363,6 +367,22 @@ export default function Companies() {
                         onChange={field.onChange}
                         type="company"
                         fallbackText={form.watch("name")?.charAt(0) || "?"}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="videoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <VideoUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        label="Company Video"
                       />
                     </FormControl>
                     <FormMessage />
