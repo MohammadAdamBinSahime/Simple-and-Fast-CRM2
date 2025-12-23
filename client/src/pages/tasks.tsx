@@ -442,7 +442,7 @@ export default function Tasks() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="priority"
@@ -461,6 +461,27 @@ export default function Tasks() {
                               {priority.charAt(0).toUpperCase() + priority.slice(1)}
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="completed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-status">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="false">Pending</SelectItem>
+                          <SelectItem value="true">Completed</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
