@@ -187,6 +187,13 @@ export default function Email() {
           <p className="text-muted-foreground text-sm mt-1">
             Compose, schedule, and automate your email communications
           </p>
+          {user?.email && (
+            <div className="flex items-center gap-2 mt-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Sending from:</span>
+              <span className="text-sm font-medium" data-testid="text-current-email">{user.email}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={templateOpen} onOpenChange={setTemplateOpen}>
