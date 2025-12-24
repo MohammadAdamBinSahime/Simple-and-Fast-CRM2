@@ -98,6 +98,49 @@ export class StripeService {
     return result.rows[0] || null;
   }
 
+  // Fetch subscription directly from Stripe API (fallback when DB doesn't have it)
+  async getSubscriptionFromStripe(subscriptionId: string) {
+    try {
+      const stripe = await getUncachableStripeClient();
+      return await stripe.subscriptions.retrieve(subscriptionId);
+    } catch (error) {
+      console.error("Error fetching subscription from Stripe:", error);
+      return null;
+    }
+  }
+
+  // Look up customer and active subscription by email directly from Stripe
+  async findSubscriptionByEmail(email: string) {
+    try {
+      const stripe = await getUncachableStripeClient();
+      
+      // Find all customers with this email
+      const customers = await stripe.customers.list({ email, limit: 10 });
+      if (!customers.data.length) return null;
+
+      // Check each customer for active subscriptions
+      for (const customer of customers.data) {
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customer.id,
+          status: 'active',
+          limit: 1,
+        });
+        
+        if (subscriptions.data.length > 0) {
+          return {
+            customer,
+            subscription: subscriptions.data[0],
+          };
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error finding subscription by email:", error);
+      return null;
+    }
+  }
+
   async getUser(id: string) {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;

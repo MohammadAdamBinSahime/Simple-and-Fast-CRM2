@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { stripeService } from "./stripeService";
-import { pool } from "./db";
+import { pool, db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 import { getStripePublishableKey, getUncachableStripeClient } from "./stripeClient";
 import { isAuthenticated } from "./replit_integrations/auth";
@@ -1254,12 +1256,45 @@ export async function registerRoutes(
       }
 
       const user = await stripeService.getUser(userId);
-      if (!user?.stripeSubscriptionId) {
-        return res.json({ subscription: null });
+      
+      // If user has subscription ID in database, try to fetch it
+      if (user?.stripeSubscriptionId) {
+        // First try from Stripe sync table
+        let subscription: any = await stripeService.getSubscription(user.stripeSubscriptionId);
+        
+        // If not found in sync table, fetch directly from Stripe API
+        if (!subscription) {
+          subscription = await stripeService.getSubscriptionFromStripe(user.stripeSubscriptionId);
+        }
+        
+        if (subscription) {
+          return res.json({ subscription });
+        }
       }
-
-      const subscription = await stripeService.getSubscription(user.stripeSubscriptionId);
-      res.json({ subscription });
+      
+      // Fallback: Look up subscription by email directly from Stripe
+      if (user?.email) {
+        const result = await stripeService.findSubscriptionByEmail(user.email);
+        if (result) {
+          // Auto-sync: Update user record with correct Stripe IDs
+          await stripeService.updateUserStripeInfo(user.id, {
+            stripeCustomerId: result.customer.id,
+            stripeSubscriptionId: result.subscription.id,
+          });
+          
+          // Also update subscription status using pool query for flexibility
+          await pool.query(
+            'UPDATE users SET subscription_status = $1 WHERE id = $2',
+            [result.subscription.status, user.id]
+          );
+          
+          console.log(`Auto-synced Stripe data for user ${user.id}: customer=${result.customer.id}, subscription=${result.subscription.id}`);
+          
+          return res.json({ subscription: result.subscription });
+        }
+      }
+      
+      return res.json({ subscription: null });
     } catch (error) {
       console.error("Error fetching subscription:", error);
       res.status(500).json({ error: "Failed to fetch subscription" });
@@ -1438,7 +1473,7 @@ export async function registerRoutes(
       `);
 
       res.json({
-        subscriptions: subscriptions.data.map(sub => ({
+        subscriptions: subscriptions.data.map((sub: any) => ({
           id: sub.id,
           status: sub.status,
           customerId: sub.customer,
@@ -1446,7 +1481,7 @@ export async function registerRoutes(
           cancelAtPeriodEnd: sub.cancel_at_period_end,
           created: sub.created,
           currency: sub.currency,
-          amount: (sub as any).items?.data?.[0]?.price?.unit_amount || 0,
+          amount: sub.items?.data?.[0]?.price?.unit_amount || 0,
         })),
         customers: customers.data.map(cust => ({
           id: cust.id,
