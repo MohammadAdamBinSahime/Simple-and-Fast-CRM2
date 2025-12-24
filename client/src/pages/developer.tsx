@@ -381,7 +381,7 @@ export default function Developer() {
             </TabsList>
           </div>
 
-          <TabsContent value="editor" className="flex-1 flex flex-col m-0 p-0 overflow-hidden">
+          <TabsContent value="editor" className="flex flex-col m-0 p-0 overflow-hidden h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
             <div className="p-4 border-b bg-muted/20">
               <div className="flex items-center gap-2">
                 <Textarea
@@ -488,7 +488,7 @@ export default function Developer() {
             </div>
           </TabsContent>
 
-          <TabsContent value="schema" className="flex-1 m-0 p-0 overflow-hidden">
+          <TabsContent value="schema" className="m-0 p-0 overflow-hidden h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
             {selectedTableInfo ? (
               <div className="h-full flex flex-col">
                 <div className="p-4 border-b bg-muted/20">
@@ -586,7 +586,7 @@ export default function Developer() {
             )}
           </TabsContent>
 
-          <TabsContent value="logs" className="flex-1 m-0 p-0 overflow-hidden flex flex-col">
+          <TabsContent value="logs" className="m-0 p-0 overflow-hidden flex flex-col h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
             <div className="p-4 border-b bg-muted/20 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Select value={logFilter} onValueChange={setLogFilter}>
@@ -729,8 +729,8 @@ export default function Developer() {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="info" className="flex-1 m-0 overflow-auto data-[state=active]:flex data-[state=active]:flex-col">
-            <div className="p-6 space-y-6 flex-none">
+          <TabsContent value="info" className="m-0 overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+            <div className="p-6 space-y-6">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
@@ -811,8 +811,8 @@ export default function Developer() {
             </div>
           </TabsContent>
 
-          <TabsContent value="stripe" className="flex-1 m-0 overflow-auto data-[state=active]:flex data-[state=active]:flex-col">
-            <div className="p-6 space-y-6 flex-none">
+          <TabsContent value="stripe" className="m-0 overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+            <div className="p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Stripe Data</h2>
                 <div className="flex gap-2">
