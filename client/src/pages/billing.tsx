@@ -241,7 +241,7 @@ export default function BillingPage() {
       )}
 
       {subscription && (
-        <Card>
+        <Card className={subscription.cancel_at_period_end ? "border-yellow-500/50" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
@@ -251,16 +251,34 @@ export default function BillingPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Status</span>
-              <Badge variant={subscription.status === "active" ? "default" : "secondary"}>
-                {subscription.status}
+              <Badge variant={subscription.cancel_at_period_end ? "secondary" : subscription.status === "active" ? "default" : "secondary"}>
+                {subscription.cancel_at_period_end ? "Canceling" : subscription.status}
               </Badge>
             </div>
-            {subscription.current_period_end && (
+            {subscription.current_period_end && !subscription.cancel_at_period_end && (
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">
-                  {subscription.cancel_at_period_end ? "Ends on" : "Renews on"}
+                <span className="text-muted-foreground">Next payment</span>
+                <span className="font-medium">
+                  {new Date(subscription.current_period_end * 1000).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                  })}
                 </span>
-                <span>{new Date(subscription.current_period_end * 1000).toLocaleDateString()}</span>
+              </div>
+            )}
+            {subscription.cancel_at_period_end && subscription.current_period_end && (
+              <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                  Your access ends on {new Date(subscription.current_period_end * 1000).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                  })}
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  Subscribe again to continue using all CRM features after this date.
+                </p>
               </div>
             )}
           </CardContent>
