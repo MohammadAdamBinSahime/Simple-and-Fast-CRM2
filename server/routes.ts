@@ -1333,6 +1333,45 @@ export async function registerRoutes(
     }
   });
 
+  // Get billing history (invoices) for current user (requires auth)
+  app.get("/api/billing/invoices", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const user = await stripeService.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const customerId = user.stripeCustomerId;
+      if (!customerId) {
+        return res.json({ invoices: [] });
+      }
+      const stripe = await getUncachableStripeClient();
+      const invoices = await stripe.invoices.list({
+        customer: customerId,
+        limit: 24,
+        expand: ["data.payment_intent"],
+      });
+      const simplified = invoices.data.map((inv) => ({
+        id: inv.id,
+        number: inv.number || null,
+        status: inv.status,
+        currency: inv.currency,
+        amount_due: inv.amount_due,
+        amount_paid: inv.amount_paid,
+        created: inv.created ? new Date(inv.created * 1000).toISOString() : null,
+        hosted_invoice_url: inv.hosted_invoice_url || null,
+        invoice_pdf: inv.invoice_pdf || null,
+      }));
+      res.json({ invoices: simplified });
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      res.status(500).json({ error: "Failed to fetch invoices" });
+    }
+  });
+
   // Create checkout session (requires auth)
   app.post("/api/billing/checkout", isAuthenticated, async (req, res) => {
     try {

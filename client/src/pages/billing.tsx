@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CreditCard, Check, ExternalLink, Clock, Gift, XCircle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLocation } from "wouter";
 
 interface TrialStatus {
@@ -84,6 +85,10 @@ export default function BillingPage() {
 
   const { data: trialData, isLoading: trialLoading } = useQuery<TrialStatus>({
     queryKey: ["/api/billing/trial"],
+  });
+
+  const { data: invoiceResp, isLoading: invoicesLoading } = useQuery<{ invoices: any[] }>({
+    queryKey: ["/api/billing/invoices"],
   });
 
   useEffect(() => {
@@ -177,6 +182,7 @@ export default function BillingPage() {
   const products = productsData?.data || [];
   const subscription = subscriptionData?.subscription;
   const trial = trialData;
+  const invoices = invoiceResp?.invoices || [];
   const isLoading = productsLoading || subscriptionLoading || trialLoading;
 
   if (isLoading) {
@@ -323,22 +329,75 @@ export default function BillingPage() {
               <ExternalLink className="h-4 w-4 mr-2" />
               Manage Billing
             </Button>
-            {!subscription.cancel_at_period_end && (
-              <Button
-                variant="destructive"
-                onClick={() => cancelMutation.mutate()}
-                disabled={cancelMutation.isPending}
-                data-testid="button-cancel-subscription"
-              >
-                {cancelMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                <XCircle className="h-4 w-4 mr-2" />
-                Cancel Subscription
-              </Button>
-            )}
+            
           </CardFooter>
         </Card>
         );
       })()}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Billing History</CardTitle>
+          <CardDescription>Past invoices and payments</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {invoicesLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading invoices...
+            </div>
+          ) : invoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No invoices found.</p>
+          ) : (
+            <Table data-testid="table-billing-history">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Receipt</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((inv) => (
+                  <TableRow key={inv.id} data-testid={`row-invoice-${inv.id}`}>
+                    <TableCell>
+                      {inv.created ? new Date(inv.created).toLocaleDateString("en-GB", {
+                        day: "numeric", month: "long", year: "numeric"
+                      }) : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {typeof inv.amount_paid === "number" ? (
+                        <span className="font-medium">
+                          {(inv.amount_paid / 100).toLocaleString(undefined, { style: "currency", currency: (inv.currency || "usd").toUpperCase() })}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={inv.status === "paid" ? "default" : "secondary"}>{inv.status || "n/a"}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {inv.hosted_invoice_url ? (
+                        <a href={inv.hosted_invoice_url} target="_blank" rel="noreferrer" className="text-primary underline">
+                          View
+                        </a>
+                      ) : inv.invoice_pdf ? (
+                        <a href={inv.invoice_pdf} target="_blank" rel="noreferrer" className="text-primary underline">
+                          PDF
+                        </a>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Only show payment options when trial has expired or user already has a subscription */}
       {(!trial?.isTrialActive || subscription) && (
