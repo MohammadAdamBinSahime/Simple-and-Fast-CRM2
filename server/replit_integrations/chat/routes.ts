@@ -5,6 +5,7 @@ import { db } from "../../db";
 import { contacts, deals, tasks } from "@shared/schema";
 import { desc } from "drizzle-orm";
 import { isAuthenticated } from "../auth";
+import { queryRag } from "../../ai/rag";
 
 // Get user ID from session claims
 function getUserId(req: Request): string | null {
@@ -138,11 +139,22 @@ export function registerChatRoutes(app: Express): void {
 - Active deals: ${recentDeals.map(d => `${d.name} ($${d.value})`).join(", ") || "None"}
 - Pending tasks: ${recentTasks.filter(t => t.completed === "false").map(t => t.title).join(", ") || "None"}`;
 
+      // Retrieve RAG context for the user's question
+      let ragContext = "";
+      try {
+        const rag = await queryRag(userId, content);
+        if (rag.sources?.length) {
+          ragContext = `\nRetrieved Context:\n${rag.sources.map(s => `- (${s.source}) ${s.text}`).join("\n")}`;
+        }
+      } catch (e) {
+        // ignore RAG failures and continue
+      }
+
       // Get conversation history for context
       const messages = await chatStorage.getMessagesByConversation(conversationId);
       
       // Build Gemini-format messages with system instruction
-      const systemInstruction = `${CRM_SYSTEM_PROMPT}\n\n${crmContext}`;
+      const systemInstruction = `${CRM_SYSTEM_PROMPT}\n\n${crmContext}${ragContext}`;
       const chatContents = messages.map((m) => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }],
