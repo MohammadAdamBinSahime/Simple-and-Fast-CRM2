@@ -7,6 +7,7 @@ import { registerChatRoutes } from "./replit_integrations/chat";
 import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
+import { storage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -156,6 +157,52 @@ app.use((req, res, next) => {
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);
   }
+
+  async function processScheduledEmailsTick() {
+    try {
+      const due = await storage.getPendingScheduledEmails();
+      for (const email of due) {
+        try {
+          const provider = (email as any).provider || "gmail";
+          if (provider === "outlook") {
+            const { sendEmailViaOutlook } = await import("./outlook");
+            await sendEmailViaOutlook({
+              to: email.toEmail,
+              cc: email.ccEmail || undefined,
+              subject: email.subject,
+              body: email.body,
+              isHtml: false,
+            });
+          } else {
+            const { sendEmailViaGmail } = await import("./gmail");
+            await sendEmailViaGmail({
+              to: email.toEmail,
+              cc: email.ccEmail || undefined,
+              subject: email.subject,
+              body: email.body,
+              isHtml: false,
+            });
+          }
+          await storage.updateScheduledEmail(email.id, {
+            status: "sent",
+            sentAt: new Date(),
+            errorMessage: null,
+          });
+          log(`Scheduled email sent: ${email.id}`, "scheduler");
+        } catch (e: any) {
+          await storage.updateScheduledEmail(email.id, {
+            status: "failed",
+            errorMessage: e?.message || String(e),
+          });
+          log(`Scheduled email failed: ${email.id} :: ${e?.message || e}`, "scheduler");
+        }
+      }
+    } catch (e: any) {
+      log(`Scheduler tick error: ${e?.message || e}`, "scheduler");
+    }
+  }
+  setInterval(processScheduledEmailsTick, 30 * 1000);
+  processScheduledEmailsTick().catch(() => {});
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
