@@ -8,6 +8,7 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { storage } from "./storage";
+import { registerRagRoutes } from "./ai/rag";
 
 const app = express();
 const httpServer = createServer(app);
@@ -137,6 +138,7 @@ app.use((req, res, next) => {
   
   // Register AI chat routes
   registerChatRoutes(app);
+  registerRagRoutes(app);
   
   await registerRoutes(httpServer, app);
 
