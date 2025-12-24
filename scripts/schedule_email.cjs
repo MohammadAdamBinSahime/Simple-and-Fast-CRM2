@@ -95,7 +95,6 @@ async function run() {
       ccEmail: null,
       subject,
       body,
-      provider: 'resend',
       status: 'scheduled',
       scheduledAt: at.toISOString(),
     });
@@ -105,4 +104,14 @@ async function run() {
   }
 }
 
-run().catch(() => process.exit(1));
+run()
+  .catch(() => process.exit(1))
+  .finally(async () => {
+    try {
+      if (context) {
+        const br = typeof context.browser === 'function' ? context.browser() : null;
+        await context.close();
+        if (br) await br.close();
+      }
+    } catch {}
+  });

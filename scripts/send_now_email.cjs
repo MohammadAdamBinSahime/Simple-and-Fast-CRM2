@@ -33,8 +33,7 @@ async function run() {
   await page.waitForSelector('[data-testid="button-compose-email"]', { timeout: 20000 });
   await page.click('[data-testid="button-compose-email"]');
 
-  await page.click('[data-testid="select-email-provider"]');
-  await page.click('text=Resend');
+  // assume default provider based on logged-in account; no provider selection
 
   await page.fill('[data-testid="input-to-email"]', toEmail);
   await page.fill('#subject', subject);
@@ -54,4 +53,14 @@ async function run() {
   await page.screenshot({ path: path.join(outDir, `sent-now-${Date.now()}.png`), fullPage: true });
 }
 
-run().catch(() => process.exit(1));
+run()
+  .catch(() => process.exit(1))
+  .finally(async () => {
+    try {
+      if (context) {
+        const br = typeof context.browser === 'function' ? context.browser() : null;
+        await context.close();
+        if (br) await br.close();
+      }
+    } catch {}
+  });

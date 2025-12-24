@@ -57,7 +57,6 @@ export default function Email() {
   const [selectedTime, setSelectedTime] = useState("09:00");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [ccEmail, setCcEmail] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState<"gmail" | "outlook">("gmail");
 
   const { data: user } = useQuery<UserInfo>({
     queryKey: ["/api/me"],
@@ -84,7 +83,6 @@ export default function Email() {
       fromEmail?: string;
       scheduledAt?: Date;
       status: string;
-      provider: "gmail" | "outlook";
     }) => {
       return apiRequest("POST", "/api/scheduled-emails", data);
     },
@@ -164,7 +162,6 @@ export default function Email() {
       fromEmail: user?.email || undefined,
       scheduledAt,
       status: scheduledAt ? "scheduled" : "sending",
-      provider: selectedProvider,
     });
   };
 
@@ -281,37 +278,7 @@ export default function Email() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleComposeSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Send via</Label>
-                  <Select 
-                    value={selectedProvider} 
-                    onValueChange={(value: "gmail" | "outlook") => setSelectedProvider(value)}
-                  >
-                    <SelectTrigger data-testid="select-email-provider">
-                      <SelectValue placeholder="Select email provider..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gmail">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Gmail
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="outlook">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Outlook
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="resend">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          Resend
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                
 
                 <div className="space-y-2">
                   <Label>To</Label>

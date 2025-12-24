@@ -8,7 +8,6 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 import { storage } from "./storage";
-import { sendEmailViaResend } from "./resend";
 
 const app = express();
 const httpServer = createServer(app);
@@ -168,14 +167,6 @@ app.use((req, res, next) => {
           if (provider === "outlook") {
             const { sendEmailViaOutlook } = await import("./outlook");
             await sendEmailViaOutlook({
-              to: email.toEmail,
-              cc: email.ccEmail || undefined,
-              subject: email.subject,
-              body: email.body,
-              isHtml: false,
-            });
-          } else if (provider === "resend") {
-            await sendEmailViaResend({
               to: email.toEmail,
               cc: email.ccEmail || undefined,
               subject: email.subject,
