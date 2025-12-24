@@ -35,8 +35,36 @@ interface Product {
 interface Subscription {
   id: string;
   status: string;
-  current_period_end: number;
+  current_period_end: number | null;
   cancel_at_period_end: boolean;
+  _raw_data?: {
+    billing_cycle_anchor?: number;
+    current_period_end?: number;
+  };
+  items?: {
+    data?: Array<{
+      current_period_end?: number;
+    }>;
+  };
+}
+
+function getSubscriptionEndDate(subscription: Subscription): number | null {
+  if (subscription.current_period_end) {
+    return subscription.current_period_end;
+  }
+  if (subscription._raw_data?.current_period_end) {
+    return subscription._raw_data.current_period_end;
+  }
+  if (subscription.items?.data?.[0]?.current_period_end) {
+    return subscription.items.data[0].current_period_end;
+  }
+  if (subscription._raw_data?.billing_cycle_anchor) {
+    const anchor = subscription._raw_data.billing_cycle_anchor;
+    const nextMonth = new Date(anchor * 1000);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    return Math.floor(nextMonth.getTime() / 1000);
+  }
+  return null;
 }
 
 export default function BillingPage() {
@@ -240,7 +268,9 @@ export default function BillingPage() {
         </Card>
       )}
 
-      {subscription && (
+      {subscription && (() => {
+        const periodEnd = getSubscriptionEndDate(subscription);
+        return (
         <Card className={subscription.cancel_at_period_end ? "border-yellow-500/50" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -255,11 +285,11 @@ export default function BillingPage() {
                 {subscription.cancel_at_period_end ? "Canceling" : subscription.status}
               </Badge>
             </div>
-            {subscription.current_period_end && !subscription.cancel_at_period_end && (
+            {periodEnd && !subscription.cancel_at_period_end && (
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Next payment</span>
                 <span className="font-medium">
-                  {new Date(subscription.current_period_end * 1000).toLocaleDateString("en-GB", {
+                  {new Date(periodEnd * 1000).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "long",
                     year: "numeric"
@@ -267,10 +297,10 @@ export default function BillingPage() {
                 </span>
               </div>
             )}
-            {subscription.cancel_at_period_end && subscription.current_period_end && (
+            {subscription.cancel_at_period_end && periodEnd && (
               <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
                 <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                  Your access ends on {new Date(subscription.current_period_end * 1000).toLocaleDateString("en-GB", {
+                  Your access ends on {new Date(periodEnd * 1000).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "long",
                     year: "numeric"
@@ -307,7 +337,8 @@ export default function BillingPage() {
             )}
           </CardFooter>
         </Card>
-      )}
+        );
+      })()}
 
       {/* Only show payment options when trial has expired or user already has a subscription */}
       {(!trial?.isTrialActive || subscription) && (
