@@ -381,7 +381,7 @@ export default function Developer() {
             </TabsList>
           </div>
 
-          <TabsContent value="editor" className="flex-1 flex flex-col m-0 p-0 overflow-hidden min-h-0">
+          <TabsContent value="editor" className="data-[state=active]:flex-1 flex flex-col m-0 p-0 overflow-hidden min-h-0 data-[state=inactive]:hidden">
             <div className="p-4 border-b bg-muted/20">
               <div className="flex items-center gap-2">
                 <Textarea
@@ -488,7 +488,7 @@ export default function Developer() {
             </div>
           </TabsContent>
 
-          <TabsContent value="schema" className="flex-1 m-0 p-0 overflow-auto min-h-0">
+          <TabsContent value="schema" className="data-[state=active]:flex-1 m-0 p-0 overflow-auto min-h-0 data-[state=inactive]:hidden">
             {selectedTableInfo ? (
               <div className="h-full flex flex-col">
                 <div className="p-4 border-b bg-muted/20">
@@ -586,7 +586,7 @@ export default function Developer() {
             )}
           </TabsContent>
 
-          <TabsContent value="logs" className="flex-1 m-0 p-0 overflow-auto min-h-0">
+          <TabsContent value="logs" className="data-[state=active]:flex-1 m-0 p-0 overflow-auto min-h-0 data-[state=inactive]:hidden">
             <div className="p-4 border-b bg-muted/20 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Select value={logFilter} onValueChange={setLogFilter}>
@@ -729,7 +729,7 @@ export default function Developer() {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="info" className="flex-1 m-0 overflow-auto min-h-0">
+          <TabsContent value="info" className="data-[state=active]:flex-1 m-0 overflow-auto min-h-0 data-[state=inactive]:hidden">
             <div className="p-6 space-y-6">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
@@ -811,7 +811,7 @@ export default function Developer() {
             </div>
           </TabsContent>
 
-          <TabsContent value="stripe" className="flex-1 m-0 overflow-auto min-h-0">
+          <TabsContent value="stripe" className="data-[state=active]:flex-1 m-0 overflow-auto min-h-0 data-[state=inactive]:hidden">
             <div className="p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Stripe Data</h2>
