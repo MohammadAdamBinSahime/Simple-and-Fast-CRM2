@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CreditCard, Check, ExternalLink, Clock, Gift } from "lucide-react";
+import { Loader2, CreditCard, Check, ExternalLink, Clock, Gift, XCircle } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface TrialStatus {
@@ -98,6 +98,27 @@ export default function BillingPage() {
       toast({
         title: "Error",
         description: "Failed to open billing portal. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/billing/cancel", {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Subscription Canceled",
+        description: "Your subscription will end at the current billing period.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/subscription"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to cancel subscription. Please try again.",
         variant: "destructive",
       });
     },
@@ -243,7 +264,7 @@ export default function BillingPage() {
               </div>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               onClick={() => portalMutation.mutate()}
@@ -254,6 +275,18 @@ export default function BillingPage() {
               <ExternalLink className="h-4 w-4 mr-2" />
               Manage Billing
             </Button>
+            {!subscription.cancel_at_period_end && (
+              <Button
+                variant="destructive"
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+                data-testid="button-cancel-subscription"
+              >
+                {cancelMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancel Subscription
+              </Button>
+            )}
           </CardFooter>
         </Card>
       )}

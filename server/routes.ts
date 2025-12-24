@@ -1368,6 +1368,38 @@ export async function registerRoutes(
     }
   });
 
+  // Cancel subscription (requires auth)
+  app.post("/api/billing/cancel", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user?.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      const stripe = (await import('stripe')).default;
+      const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!);
+      
+      const subscription = await stripeClient.subscriptions.update(
+        user.stripeSubscriptionId,
+        { cancel_at_period_end: true }
+      );
+
+      res.json({ 
+        success: true, 
+        message: "Subscription will be canceled at the end of the billing period",
+        cancelAt: subscription.cancel_at
+      });
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
+      res.status(500).json({ error: "Failed to cancel subscription" });
+    }
+  });
+
   // Developer-only endpoints
   const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
 
