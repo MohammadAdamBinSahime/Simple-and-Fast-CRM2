@@ -67,6 +67,51 @@ interface LogsData {
   stats: { level: string; count: number }[];
 }
 
+interface StripeSubscription {
+  id: string;
+  status: string;
+  customerId: string;
+  currentPeriodEnd: number;
+  cancelAtPeriodEnd: boolean;
+  created: number;
+  currency: string;
+  amount: number;
+}
+
+interface StripeCustomer {
+  id: string;
+  email: string | null;
+  name: string | null;
+  created: number;
+}
+
+interface StripePayment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  created: number;
+  customerId: string | null;
+}
+
+interface DbUser {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  subscription_status: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_at: string;
+}
+
+interface StripeData {
+  subscriptions: StripeSubscription[];
+  customers: StripeCustomer[];
+  payments: StripePayment[];
+  dbUsers: DbUser[];
+}
+
 function getTypeIcon(type: string) {
   const lowerType = type.toLowerCase();
   if (lowerType.includes("int") || lowerType.includes("numeric") || lowerType.includes("decimal")) {
@@ -147,6 +192,11 @@ export default function Developer() {
       if (!response.ok) throw new Error("Failed to fetch logs");
       return response.json();
     },
+    enabled: user?.email === DEVELOPER_EMAIL,
+  });
+
+  const { data: stripeData, isLoading: stripeLoading, refetch: refetchStripe } = useQuery<StripeData>({
+    queryKey: ["/api/developer/stripe"],
     enabled: user?.email === DEVELOPER_EMAIL,
   });
 
@@ -763,101 +813,208 @@ export default function Developer() {
 
           <TabsContent value="stripe" className="flex-1 m-0 overflow-auto">
             <div className="p-6 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    Stripe Dashboard
-                  </CardTitle>
-                  <CardDescription>
-                    Access your Stripe dashboard to monitor payments, subscriptions, and customer data.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Button
-                      variant="default"
-                      className="w-full justify-start gap-2"
-                      onClick={() => window.open("https://dashboard.stripe.com", "_blank")}
-                      data-testid="button-stripe-dashboard"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Open Stripe Dashboard
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => window.open("https://dashboard.stripe.com/payments", "_blank")}
-                      data-testid="button-stripe-payments"
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      View Payments
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => window.open("https://dashboard.stripe.com/subscriptions", "_blank")}
-                      data-testid="button-stripe-subscriptions"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      View Subscriptions
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => window.open("https://dashboard.stripe.com/customers", "_blank")}
-                      data-testid="button-stripe-customers"
-                    >
-                      <Users className="h-4 w-4" />
-                      View Customers
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => window.open("https://dashboard.stripe.com/webhooks", "_blank")}
-                      data-testid="button-stripe-webhooks"
-                    >
-                      <Link2 className="h-4 w-4" />
-                      View Webhooks
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2"
-                      onClick={() => window.open("https://dashboard.stripe.com/logs", "_blank")}
-                      data-testid="button-stripe-logs"
-                    >
-                      <ScrollText className="h-4 w-4" />
-                      View Logs
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Stripe Data</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetchStripe()}
+                    data-testid="button-refresh-stripe"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => window.open("https://dashboard.stripe.com", "_blank")}
+                    data-testid="button-stripe-dashboard"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Stripe Dashboard
+                  </Button>
+                </div>
+              </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={() => window.open("https://dashboard.stripe.com/test/payments", "_blank")}
-                    data-testid="button-stripe-test-mode"
-                  >
-                    <Bug className="h-4 w-4" />
-                    Test Mode Dashboard
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2"
-                    onClick={() => window.open("https://dashboard.stripe.com/products", "_blank")}
-                    data-testid="button-stripe-products"
-                  >
-                    <Tag className="h-4 w-4" />
-                    Manage Products & Prices
-                  </Button>
-                </CardContent>
-              </Card>
+              {stripeLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Subscriptions</CardTitle>
+                        <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{stripeData?.subscriptions?.length || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {stripeData?.subscriptions?.filter(s => s.status === 'active').length || 0} active
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{stripeData?.customers?.length || 0}</div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Recent Payments</CardTitle>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{stripeData?.payments?.length || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {stripeData?.payments?.filter(p => p.status === 'succeeded').length || 0} succeeded
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+                      <CardDescription>All subscriptions from Stripe</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {stripeData?.subscriptions?.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No subscriptions found</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-2 font-medium">ID</th>
+                                <th className="text-left py-2 px-2 font-medium">Customer</th>
+                                <th className="text-left py-2 px-2 font-medium">Status</th>
+                                <th className="text-left py-2 px-2 font-medium">Amount</th>
+                                <th className="text-left py-2 px-2 font-medium">Period End</th>
+                                <th className="text-left py-2 px-2 font-medium">Cancel?</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stripeData?.subscriptions?.map(sub => (
+                                <tr key={sub.id} className="border-b hover:bg-muted/50">
+                                  <td className="py-2 px-2 font-mono text-xs">{sub.id.slice(-8)}</td>
+                                  <td className="py-2 px-2 font-mono text-xs">{String(sub.customerId).slice(-8)}</td>
+                                  <td className="py-2 px-2">
+                                    <Badge variant={sub.status === 'active' ? 'default' : 'secondary'}>
+                                      {sub.status}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    {(sub.amount / 100).toFixed(2)} {sub.currency?.toUpperCase()}
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    {new Date(sub.currentPeriodEnd * 1000).toLocaleDateString()}
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    {sub.cancelAtPeriodEnd ? (
+                                      <Badge variant="destructive">Yes</Badge>
+                                    ) : (
+                                      <Badge variant="outline">No</Badge>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Database Users with Stripe</CardTitle>
+                      <CardDescription>Users in your database with Stripe customer IDs</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {stripeData?.dbUsers?.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No users with Stripe data</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-2 font-medium">Email</th>
+                                <th className="text-left py-2 px-2 font-medium">Status</th>
+                                <th className="text-left py-2 px-2 font-medium">Customer ID</th>
+                                <th className="text-left py-2 px-2 font-medium">Subscription ID</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stripeData?.dbUsers?.map(u => (
+                                <tr key={u.id} className="border-b hover:bg-muted/50">
+                                  <td className="py-2 px-2">{u.email || '-'}</td>
+                                  <td className="py-2 px-2">
+                                    <Badge variant={u.subscription_status === 'active' ? 'default' : 'secondary'}>
+                                      {u.subscription_status || 'none'}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-2 font-mono text-xs">{u.stripe_customer_id?.slice(-8) || '-'}</td>
+                                  <td className="py-2 px-2 font-mono text-xs">{u.stripe_subscription_id?.slice(-8) || '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Recent Payments</CardTitle>
+                      <CardDescription>Last 20 payment intents from Stripe</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {stripeData?.payments?.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No payments found</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-2 font-medium">ID</th>
+                                <th className="text-left py-2 px-2 font-medium">Amount</th>
+                                <th className="text-left py-2 px-2 font-medium">Status</th>
+                                <th className="text-left py-2 px-2 font-medium">Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {stripeData?.payments?.map(payment => (
+                                <tr key={payment.id} className="border-b hover:bg-muted/50">
+                                  <td className="py-2 px-2 font-mono text-xs">{payment.id.slice(-8)}</td>
+                                  <td className="py-2 px-2">
+                                    {(payment.amount / 100).toFixed(2)} {payment.currency?.toUpperCase()}
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <Badge variant={payment.status === 'succeeded' ? 'default' : 'secondary'}>
+                                      {payment.status}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    {new Date(payment.created * 1000).toLocaleString()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </TabsContent>
         </Tabs>

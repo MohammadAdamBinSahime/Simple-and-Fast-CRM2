@@ -1403,6 +1403,73 @@ export async function registerRoutes(
   // Developer-only endpoints
   const DEVELOPER_EMAIL = "adamsahime1998@gmail.com";
 
+  // Get Stripe data (developer only)
+  app.get("/api/developer/stripe", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const user = await stripeService.getUser(userId);
+      if (!user || user.email !== DEVELOPER_EMAIL) {
+        return res.status(403).json({ error: "Access denied. Developer only." });
+      }
+
+      const stripe = (await import('stripe')).default;
+      const stripeClient = new stripe(process.env.STRIPE_SECRET_KEY!);
+
+      // Fetch subscriptions
+      const subscriptions = await stripeClient.subscriptions.list({ limit: 100 });
+      
+      // Fetch customers
+      const customers = await stripeClient.customers.list({ limit: 100 });
+      
+      // Fetch recent payments
+      const payments = await stripeClient.paymentIntents.list({ limit: 20 });
+
+      // Get users with subscriptions from database
+      const usersResult = await pool.query(`
+        SELECT id, email, first_name, last_name, subscription_status, 
+               stripe_customer_id, stripe_subscription_id, created_at
+        FROM users 
+        WHERE stripe_customer_id IS NOT NULL OR stripe_subscription_id IS NOT NULL
+        ORDER BY created_at DESC
+      `);
+
+      res.json({
+        subscriptions: subscriptions.data.map(sub => ({
+          id: sub.id,
+          status: sub.status,
+          customerId: sub.customer,
+          currentPeriodEnd: sub.current_period_end,
+          cancelAtPeriodEnd: sub.cancel_at_period_end,
+          created: sub.created,
+          currency: sub.currency,
+          amount: (sub as any).items?.data?.[0]?.price?.unit_amount || 0,
+        })),
+        customers: customers.data.map(cust => ({
+          id: cust.id,
+          email: cust.email,
+          name: cust.name,
+          created: cust.created,
+        })),
+        payments: payments.data.map(payment => ({
+          id: payment.id,
+          amount: payment.amount,
+          currency: payment.currency,
+          status: payment.status,
+          created: payment.created,
+          customerId: payment.customer,
+        })),
+        dbUsers: usersResult.rows,
+      });
+    } catch (error: any) {
+      console.error("Stripe data fetch error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch Stripe data" });
+    }
+  });
+
   // Get logs (developer only)
   app.get("/api/developer/logs", isAuthenticated, async (req, res) => {
     try {
