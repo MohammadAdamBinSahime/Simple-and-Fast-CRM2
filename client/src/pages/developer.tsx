@@ -729,8 +729,8 @@ export default function Developer() {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="info" className="flex-1 m-0 overflow-auto">
-            <div className="p-6 space-y-6">
+          <TabsContent value="info" className="flex-1 m-0 overflow-auto data-[state=active]:flex data-[state=active]:flex-col">
+            <div className="p-6 space-y-6 flex-none">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-2">
@@ -811,8 +811,8 @@ export default function Developer() {
             </div>
           </TabsContent>
 
-          <TabsContent value="stripe" className="flex-1 m-0 overflow-auto">
-            <div className="p-6 space-y-6">
+          <TabsContent value="stripe" className="flex-1 m-0 overflow-auto data-[state=active]:flex data-[state=active]:flex-col">
+            <div className="p-6 space-y-6 flex-none">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Stripe Data</h2>
                 <div className="flex gap-2">
