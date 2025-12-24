@@ -23,6 +23,7 @@ import {
   insertEmailTemplateSchema,
   insertScheduledEmailSchema,
 } from "@shared/schema";
+import { sendEmailViaResend } from "./resend";
 import { z } from "zod";
 
 // UAT Mode - Set to true to bypass authentication for testing
@@ -840,6 +841,14 @@ export async function registerRoutes(
           if (provider === "outlook") {
             const { sendEmailViaOutlook } = await import("./outlook");
             await sendEmailViaOutlook({
+              to: data.toEmail,
+              cc: data.ccEmail || undefined,
+              subject: data.subject,
+              body: data.body,
+              isHtml: false,
+            });
+          } else if (provider === "resend") {
+            await sendEmailViaResend({
               to: data.toEmail,
               cc: data.ccEmail || undefined,
               subject: data.subject,

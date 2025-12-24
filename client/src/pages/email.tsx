@@ -303,6 +303,12 @@ export default function Email() {
                           Outlook
                         </div>
                       </SelectItem>
+                      <SelectItem value="resend">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          Resend
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

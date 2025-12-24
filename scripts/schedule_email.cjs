@@ -95,7 +95,7 @@ async function run() {
       ccEmail: null,
       subject,
       body,
-      provider: 'gmail',
+      provider: 'resend',
       status: 'scheduled',
       scheduledAt: at.toISOString(),
     });
