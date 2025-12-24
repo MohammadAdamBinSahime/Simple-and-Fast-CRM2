@@ -1,0 +1,4 @@
+{
+  "status": 400,
+  "body": "{\"error\":[{\"code\":\"invalid_type\",\"expected\":\"date\",\"received\":\"string\",\"path\":[\"scheduledAt\"],\"message\":\"Expected date, received string\"}]}"
+}

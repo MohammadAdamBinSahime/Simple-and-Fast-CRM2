@@ -1,0 +1,4 @@
+{
+  "status": 201,
+  "body": "{\"id\":\"464a5432-e81d-431b-a17b-cbb1b769485f\",\"userId\":\"46178402\",\"emailAccountId\":null,\"contactId\":null,\"toEmail\":\"adamsahime1998@gmail.com\",\"ccEmail\":null,\"subject\":\"Immediate test email\",\"body\":\"This is an immediate email from Playwright.\",\"provider\":\"gmail\",\"status\":\"sent\",\"scheduledAt\":null,\"sentAt\":\"2025-12-24T10:31:57.435Z\",\"errorMessage\":null,\"createdAt\":\"2025-12-24T10:31:54.918Z\"}"
+}

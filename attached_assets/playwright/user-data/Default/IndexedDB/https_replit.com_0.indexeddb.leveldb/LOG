@@ -1,0 +1,6 @@
+2025/12/24-18:03:56.983 9058 Creating DB C:\Users\adams\Downloads\crm5\Simple-and-Fast-CRM2\attached_assets\playwright\user-data\Default\IndexedDB\https_replit.com_0.indexeddb.leveldb since it was missing.
+2025/12/24-18:03:57.007 9058 Reusing MANIFEST C:\Users\adams\Downloads\crm5\Simple-and-Fast-CRM2\attached_assets\playwright\user-data\Default\IndexedDB\https_replit.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/12/24-18:03:57.145 90f8 Level-0 table #5: started
+2025/12/24-18:03:57.178 90f8 Level-0 table #5: 1262 bytes OK
+2025/12/24-18:03:57.181 90f8 Delete type=0 #3
+2025/12/24-18:03:57.182 90f8 Manual compaction at level-0 from '\x00\x01\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x02\x00\x00\x00' @ 0 : 0; will stop at (end)
