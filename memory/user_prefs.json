@@ -1,0 +1,12 @@
+{
+  "speak_at_end": true,
+  "tts_command_template": "Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Speak(\"%TEXT%\" );",
+  "preferred_opening_text": "Acknowledged. I will speak my responses using PowerShell text to speech.",
+  "playwright": {
+    "enabled": true,
+    "headless": false,
+    "save_trace": true,
+    "save_error_screenshots": true
+  },
+  "last_updated": "2025-12-24"
+}

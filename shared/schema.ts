@@ -328,9 +328,13 @@ export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit
   createdAt: true,
 });
 
-export const insertScheduledEmailSchema = createInsertSchema(scheduledEmails).omit({
+const baseInsertScheduledEmailSchema = createInsertSchema(scheduledEmails).omit({
   id: true,
   createdAt: true,
+});
+export const insertScheduledEmailSchema = baseInsertScheduledEmailSchema.extend({
+  scheduledAt: z.coerce.date().optional(),
+  sentAt: z.coerce.date().optional(),
 });
 
 export const insertIntegrationAccountSchema = createInsertSchema(integrationAccounts).omit({
