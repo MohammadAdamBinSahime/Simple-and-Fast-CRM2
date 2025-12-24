@@ -10,7 +10,7 @@ import {
   Code, Database, Server, Users, Building2, HandshakeIcon, CheckSquare, 
   FileText, Tag, RefreshCw, Play, Loader2, Terminal, Table, Key, 
   Link2, Hash, Type, Calendar, ToggleLeft, Layers, AlertCircle, 
-  AlertTriangle, Info, Bug, Trash2, ScrollText
+  AlertTriangle, Info, Bug, Trash2, ScrollText, CreditCard, ExternalLink
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -323,6 +323,10 @@ export default function Developer() {
               <TabsTrigger value="info" className="gap-2" data-testid="tab-info">
                 <Server className="h-3.5 w-3.5" />
                 System Info
+              </TabsTrigger>
+              <TabsTrigger value="stripe" className="gap-2" data-testid="tab-stripe">
+                <CreditCard className="h-3.5 w-3.5" />
+                Stripe
               </TabsTrigger>
             </TabsList>
           </div>
@@ -754,6 +758,106 @@ export default function Developer() {
                   </CardContent>
                 </Card>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="stripe" className="flex-1 m-0 overflow-auto">
+            <div className="p-6 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Stripe Dashboard
+                  </CardTitle>
+                  <CardDescription>
+                    Access your Stripe dashboard to monitor payments, subscriptions, and customer data.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Button
+                      variant="default"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open("https://dashboard.stripe.com", "_blank")}
+                      data-testid="button-stripe-dashboard"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open Stripe Dashboard
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open("https://dashboard.stripe.com/payments", "_blank")}
+                      data-testid="button-stripe-payments"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      View Payments
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open("https://dashboard.stripe.com/subscriptions", "_blank")}
+                      data-testid="button-stripe-subscriptions"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      View Subscriptions
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open("https://dashboard.stripe.com/customers", "_blank")}
+                      data-testid="button-stripe-customers"
+                    >
+                      <Users className="h-4 w-4" />
+                      View Customers
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open("https://dashboard.stripe.com/webhooks", "_blank")}
+                      data-testid="button-stripe-webhooks"
+                    >
+                      <Link2 className="h-4 w-4" />
+                      View Webhooks
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open("https://dashboard.stripe.com/logs", "_blank")}
+                      data-testid="button-stripe-logs"
+                    >
+                      <ScrollText className="h-4 w-4" />
+                      View Logs
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                    onClick={() => window.open("https://dashboard.stripe.com/test/payments", "_blank")}
+                    data-testid="button-stripe-test-mode"
+                  >
+                    <Bug className="h-4 w-4" />
+                    Test Mode Dashboard
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                    onClick={() => window.open("https://dashboard.stripe.com/products", "_blank")}
+                    data-testid="button-stripe-products"
+                  >
+                    <Tag className="h-4 w-4" />
+                    Manage Products & Prices
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
