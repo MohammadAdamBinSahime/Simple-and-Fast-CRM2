@@ -200,6 +200,67 @@ export default function BillingPage() {
         <p className="text-muted-foreground">Manage your subscription and billing</p>
       </div>
 
+      {(!trial?.isTrialActive || subscription) && (
+        products.length > 0 ? (
+          <div>
+            <h2 className="text-lg font-medium mb-4">Available Plans</h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <Card key={product.id} className="flex flex-col" data-testid={`card-product-${product.id}`}>
+                  <CardHeader>
+                    <CardTitle>{product.name}</CardTitle>
+                    {product.description && (
+                      <CardDescription>{product.description}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    {product.prices.length > 0 && (
+                      <div className="space-y-2">
+                        {product.prices.map((price) => (
+                          <div key={price.id} className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold">
+                              {formatPrice(price.unit_amount, price.currency)}
+                            </span>
+                            {price.recurring && (
+                              <span className="text-muted-foreground text-sm">
+                                {formatInterval(price.recurring.interval)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    {product.prices.length > 0 && (
+                      <Button
+                        className="w-full"
+                        onClick={() => checkoutMutation.mutate(product.prices[0].id)}
+                        disabled={checkoutMutation.isPending || !!subscription}
+                        data-testid={`button-subscribe-${product.id}`}
+                      >
+                        {checkoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                        {subscription ? "Already subscribed" : "Subscribe Now"}
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-medium mb-2">No Plans Available</h3>
+              <p className="text-muted-foreground">
+                Subscription plans will appear here once configured.
+              </p>
+            </CardContent>
+          </Card>
+        )
+      )}
+
       {success && (
         <Card className="border-green-500/50 bg-green-50 dark:bg-green-950/20">
           <CardContent className="pt-6">
@@ -399,67 +460,7 @@ export default function BillingPage() {
         </CardContent>
       </Card>
 
-      {/* Only show payment options when trial has expired or user already has a subscription */}
-      {(!trial?.isTrialActive || subscription) && (
-        products.length > 0 ? (
-          <div>
-            <h2 className="text-lg font-medium mb-4">Available Plans</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {products.map((product) => (
-                <Card key={product.id} className="flex flex-col" data-testid={`card-product-${product.id}`}>
-                  <CardHeader>
-                    <CardTitle>{product.name}</CardTitle>
-                    {product.description && (
-                      <CardDescription>{product.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    {product.prices.length > 0 && (
-                      <div className="space-y-2">
-                        {product.prices.map((price) => (
-                          <div key={price.id} className="flex items-baseline gap-1">
-                            <span className="text-2xl font-bold">
-                              {formatPrice(price.unit_amount, price.currency)}
-                            </span>
-                            {price.recurring && (
-                              <span className="text-muted-foreground text-sm">
-                                {formatInterval(price.recurring.interval)}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                  <CardFooter>
-                    {product.prices.length > 0 && (
-                      <Button
-                        className="w-full"
-                        onClick={() => checkoutMutation.mutate(product.prices[0].id)}
-                        disabled={checkoutMutation.isPending || !!subscription}
-                        data-testid={`button-subscribe-${product.id}`}
-                      >
-                        {checkoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                        {subscription ? "Already subscribed" : "Subscribe Now"}
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No Plans Available</h3>
-              <p className="text-muted-foreground">
-                Subscription plans will appear here once configured.
-              </p>
-            </CardContent>
-          </Card>
-        )
-      )}
+      
     </div>
   );
 }
