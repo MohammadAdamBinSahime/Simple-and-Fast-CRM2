@@ -216,33 +216,39 @@ export default function BillingPage() {
                   <CardContent className="flex-1">
                     {product.prices.length > 0 && (
                       <div className="space-y-2">
-                        {product.prices.map((price) => (
-                          <div key={price.id} className="flex items-baseline gap-1">
-                            <span className="text-2xl font-bold">
-                              {formatPrice(price.unit_amount, price.currency)}
-                            </span>
-                            {price.recurring && (
-                              <span className="text-muted-foreground text-sm">
-                                {formatInterval(price.recurring.interval)}
+                        {(() => {
+                          const price = product.prices.find((p) => p.active && p.recurring?.interval === "month") || product.prices[0];
+                          return (
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-bold">
+                                {formatPrice(price.unit_amount, price.currency)}
                               </span>
-                            )}
-                          </div>
-                        ))}
+                              {price.recurring && (
+                                <span className="text-muted-foreground text-sm">
+                                  {formatInterval(price.recurring.interval)}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </CardContent>
                   <CardFooter>
-                    {product.prices.length > 0 && (
-                      <Button
-                        className="w-full"
-                        onClick={() => checkoutMutation.mutate(product.prices[0].id)}
-                        disabled={checkoutMutation.isPending || !!subscription}
-                        data-testid={`button-subscribe-${product.id}`}
-                      >
-                        {checkoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                        {subscription ? "Already subscribed" : "Subscribe Now"}
-                      </Button>
-                    )}
+                    {product.prices.length > 0 && (() => {
+                      const price = product.prices.find((p) => p.active && p.recurring?.interval === "month") || product.prices[0];
+                      return (
+                        <Button
+                          className="w-full"
+                          onClick={() => checkoutMutation.mutate(price.id)}
+                          disabled={checkoutMutation.isPending || !!subscription}
+                          data-testid={`button-subscribe-${product.id}`}
+                        >
+                          {checkoutMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                          {subscription ? "Already subscribed" : "Subscribe Now"}
+                        </Button>
+                      );
+                    })()}
                   </CardFooter>
                 </Card>
               ))}
