@@ -312,7 +312,7 @@ export default function BillingPage() {
             <div className="bg-background/50 rounded-md p-4 border">
               <p className="text-sm font-medium mb-1">Payment Required After Trial</p>
               <p className="text-sm text-muted-foreground">
-                You have full access to all features during your trial. After your trial ends, you will need to subscribe to continue using the CRM at RM59.99/month.
+                You have full access to all features during your trial. After your trial ends, you will need to subscribe to continue using the CRM at RM99.99/month.
               </p>
             </div>
           </CardContent>

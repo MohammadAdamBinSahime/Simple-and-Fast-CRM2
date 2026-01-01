@@ -16,7 +16,7 @@ async function createProducts() {
     return;
   }
 
-  // Create Professional Plan - RM59.99/month
+  // Create Professional Plan - RM99.99/month
   const proProduct = await stripe.products.create({
     name: 'CRM Professional',
     description: 'Full-featured CRM for real estate agents - unlimited contacts, deals, and AI assistant',
@@ -30,12 +30,12 @@ async function createProducts() {
 
   await stripe.prices.create({
     product: proProduct.id,
-    unit_amount: 5999, // RM59.99
+    unit_amount: 9999, // RM99.99
     currency: 'myr',
     recurring: { interval: 'month' },
   });
 
-  console.log('Created: CRM Professional - RM59.99/month');
+  console.log('Created: CRM Professional - RM99.99/month');
 
   console.log('\nProduct created successfully!');
   console.log('Webhooks will automatically sync it to the database.');
