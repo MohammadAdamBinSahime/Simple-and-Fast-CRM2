@@ -352,18 +352,6 @@ export default function BillingPage() {
                 {subscription.cancel_at_period_end ? "Canceling" : subscription.status}
               </Badge>
             </div>
-            {periodEnd && !subscription.cancel_at_period_end && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Next payment</span>
-                <span className="font-medium">
-                  {new Date(periodEnd * 1000).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                  })}
-                </span>
-              </div>
-            )}
             {subscription.cancel_at_period_end && periodEnd && (
               <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
                 <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
